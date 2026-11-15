@@ -1,0 +1,156 @@
+<style>
+  .tw { --sand:#f5eee3; --paper:#fffaf3; --ink:#1d2a29; --muted:#6b7a76; --lagoon:#0e5a52; --sea:#cfe6e0; --coral:#f0704f; --sun:#f2b84b; --line:#e1d6c5;
+        background:var(--sand); color:var(--ink); font:14px/1.5 system-ui,sans-serif; border-radius:14px; padding:28px; }
+  .tw .serif { font-family:"Fraunces",Georgia,serif; font-weight:400; }
+  .tw .step { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--lagoon); font-weight:700; margin-bottom:10px; }
+  .tw .screen { background:linear-gradient(160deg,#fbf3e6,#f5eee3 60%,#e4f1ec); border:1px solid var(--line); border-radius:18px; padding:28px; min-height:300px; }
+  .tw .center { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .tw .ask { font-size:34px; margin:40px 0 22px; }
+  .tw .input { background:var(--paper); border:1px solid var(--line); border-radius:999px; padding:12px 16px 12px 20px; width:min(460px,90%);
+               display:flex; justify-content:space-between; align-items:center; color:var(--muted); box-shadow:0 10px 30px -18px rgba(29,42,41,.35); }
+  .tw .send { background:var(--lagoon); color:#fff; border-radius:999px; width:32px; height:32px; display:grid; place-items:center; }
+  .tw .bubble { max-width:78%; padding:10px 14px; border-radius:16px; margin:6px 0; text-align:left; }
+  .tw .me { background:var(--lagoon); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
+  .tw .them { background:var(--paper); border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .tw .chat { width:min(520px,95%); display:flex; flex-direction:column; }
+  .tw .globe { width:150px; height:150px; border-radius:50%; position:relative; overflow:hidden;
+    background: radial-gradient(circle at 35% 30%, #d9efe9 0%, #8cc7ba 45%, #2d7f73 100%); box-shadow: inset -18px -14px 40px rgba(14,90,82,.45), 0 20px 40px -20px rgba(14,90,82,.6); }
+  .tw .globe::before { content:""; position:absolute; inset:0; border-radius:50%;
+    background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255,250,243,.35) 22px 23px),
+                radial-gradient(ellipse 30px 18px at 20% 40%, #f2d7a6 60%, transparent 62%),
+                radial-gradient(ellipse 24px 30px at 65% 60%, #f2d7a6 60%, transparent 62%),
+                radial-gradient(ellipse 18px 12px at 85% 25%, #f2d7a6 60%, transparent 62%);
+    background-size: 300px 100%, 300px 100%, 300px 100%, 300px 100%; animation: spin 6s linear infinite; }
+  @keyframes spin { from { background-position: 0 0,0 0,0 0,0 0; } to { background-position: 300px 0,300px 0,300px 0,300px 0; } }
+  .tw .status { color:var(--muted); font-style:italic; margin-top:18px; }
+  .tw .ring { position:relative; width:280px; height:280px; margin:10px auto 0; }
+  .tw .ring .globe { position:absolute; left:65px; top:65px; }
+  .tw .ring svg { position:absolute; inset:0; }
+  .tw .node { position:absolute; width:46px; height:46px; margin:-23px 0 0 -23px; border-radius:50%; background:var(--paper); border:1.5px solid var(--line);
+              display:grid; place-items:center; font-size:18px; }
+  .tw .node.done { border-color:var(--lagoon); background:#e6f3ef; }
+  .tw .node.now { border-color:var(--coral); box-shadow:0 0 0 6px rgba(240,112,79,.15); }
+  .tw .node small { position:absolute; top:48px; font-size:10px; white-space:nowrap; color:var(--muted); }
+  .tw .flow { display:flex; align-items:center; gap:6px; margin-top:26px; flex-wrap:wrap; justify-content:center; }
+  .tw .flow .node { position:static; margin:0; }
+  .tw .flow .node small { position:static; display:block; }
+  .tw .flow .bar { width:22px; height:2px; background:var(--line); }
+  .tw .flow .bar.done { background:var(--lagoon); }
+  .tw .flow .pair { display:flex; flex-direction:column; gap:6px; }
+  .tw .results { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .tw .card { background:var(--paper); border:1px solid var(--line); border-radius:16px; overflow:hidden; text-align:left; }
+  .tw .card .hero { height:80px; background:linear-gradient(135deg,#157a6e,#0e5a52); color:#fff; padding:12px 14px; display:flex; flex-direction:column; justify-content:flex-end; }
+  .tw .card .hero.b { background:linear-gradient(135deg,#f0a35b,#d76a4a); }
+  .tw .card .hero.c { background:linear-gradient(135deg,#5b8fb0,#2f5d7c); }
+  .tw .card .body { padding:12px 14px; }
+  .tw .price { font-size:22px; }
+  .tw .muted { color:var(--muted); font-size:12px; }
+  .tw .days { margin:8px 0; font-size:12px; color:var(--ink); }
+  .tw .days div { padding:3px 0; border-bottom:1px dashed var(--line); }
+  .tw .btns { display:flex; gap:6px; margin-top:10px; }
+  .tw .btn { flex:1; text-align:center; padding:7px 0; border-radius:999px; font-size:12px; font-weight:600; }
+  .tw .btn.p { background:var(--lagoon); color:#fff; } .tw .btn.s { border:1px solid var(--lagoon); color:var(--lagoon); }
+  .tw .badge { display:inline-block; background:var(--sun); color:var(--ink); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; margin-bottom:4px; }
+</style>
+
+<h2>Here's the flow I heard. Is this right?</h2>
+<p class="subtitle">Your colors and fonts, three screens. The only open choice on this page is <b>how the crew is shown</b> on screen 2. Click A or B.</p>
+
+<div class="tw">
+  <div class="section">
+    <div class="step">1 · Ask</div>
+    <div class="screen center">
+      <div class="serif ask">Where would you like to go?</div>
+      <div class="input"><span>Somewhere warm in December, I'm burnt out…</span><span class="send">→</span></div>
+      <div class="muted" style="margin-top:14px">Nothing else on the page.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="step">1b · The first agent asks only what's missing</div>
+    <div class="screen center">
+      <div class="chat">
+        <div class="bubble me">Somewhere warm in December, I'm burnt out. Want to learn to surf, great food, no party scene.</div>
+        <div class="bubble them">That sounds like exactly what you need. A few quick things so I plan it right:<br>
+          · Which dates, roughly, and for how long?<br>
+          · Where would you be flying from?<br>
+          · Your budget for everything, flights included?<br>
+          · Anything you'd love to catch: a festival, a place, or more than one country?</div>
+        <div class="bubble me">Dec 1–15, from Boston, around $3k. One country is fine.</div>
+        <div class="bubble them">Perfect. Finding three trips for you now.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="step">2 · While the crew works: globe + crew. Pick one.</div>
+    <div class="options">
+      <div class="option" data-choice="ring" onclick="toggleSelect(this)">
+        <div class="letter">A</div>
+        <div class="content">
+          <h3>Crew in a circle around the globe</h3>
+          <div class="tw" style="padding:14px"><div class="screen center" style="min-height:0">
+            <div class="ring">
+              <svg viewBox="0 0 280 280"><circle cx="140" cy="140" r="118" fill="none" stroke="#e1d6c5" stroke-width="2" stroke-dasharray="4 5"/>
+                <path d="M140 22 A118 118 0 0 1 252 104" fill="none" stroke="#0e5a52" stroke-width="2.5"/></svg>
+              <div class="globe"></div>
+              <div class="node done" style="left:140px;top:22px">📝<small>Brief</small></div>
+              <div class="node done" style="left:232px;top:66px">🧭<small>Scout</small></div>
+              <div class="node now"  style="left:255px;top:166px">⚖️<small>Judge</small></div>
+              <div class="node" style="left:191px;top:248px">🗺️<small>Itinerary</small></div>
+              <div class="node" style="left:89px;top:248px">✈️<small>Logistics</small></div>
+              <div class="node" style="left:25px;top:166px">💵<small>Budget</small></div>
+              <div class="node" style="left:48px;top:66px">🔍<small>Reviewer</small></div>
+            </div>
+            <div class="status">Comparing December weather on three coastlines…</div>
+          </div></div>
+          <p>The globe is the hero, and the crew lights up around it as each one finishes. Calm and compact.</p>
+        </div>
+      </div>
+      <div class="option" data-choice="flow" onclick="toggleSelect(this)">
+        <div class="letter">B</div>
+        <div class="content">
+          <h3>Globe on top, crew as a flow beneath</h3>
+          <div class="tw" style="padding:14px"><div class="screen center" style="min-height:0">
+            <div class="globe"></div>
+            <div class="flow">
+              <div class="node done">📝<small>Brief</small></div><div class="bar done"></div>
+              <div class="node done">🧭<small>Scout</small></div><div class="bar done"></div>
+              <div class="node now">⚖️<small>Judge</small></div><div class="bar"></div>
+              <div class="pair"><div class="node">🗺️<small>Itinerary</small></div><div class="node">✈️<small>Logistics</small></div></div><div class="bar"></div>
+              <div class="node">💵<small>Budget</small></div><div class="bar"></div>
+              <div class="node">🔍<small>Reviewer</small></div>
+            </div>
+            <div class="status">Comparing December weather on three coastlines…</div>
+          </div></div>
+          <p>Shows the real order, including Itinerary and Logistics working side by side. A little more diagram-like.</p>
+        </div>
+      </div>
+    </div>
+    <p class="subtitle" style="margin-top:8px">Either way: one friendly status line, with no tool names, token counts or raw "thoughts".</p>
+  </div>
+
+  <div class="section">
+    <div class="step">3 · Results: three fully planned trips</div>
+    <div class="screen">
+      <div class="results">
+        <div class="card"><div class="hero"><span class="badge">Best match</span><span class="serif" style="font-size:18px">Nicoya Peninsula</span><span style="font-size:11px;opacity:.85">Costa Rica · 14 nights</span></div>
+          <div class="body"><span class="serif price">$2,940</span> <span class="muted">total, flights included</span>
+            <div class="days"><div>Days 1–4 · Nosara, first surf lessons</div><div>Days 5–10 · Santa Teresa</div><div>Days 11–15 · Sámara, slow end</div></div>
+            <div class="muted">See full itinerary ›</div>
+            <div class="btns"><span class="btn p">Flights</span><span class="btn s">Stays</span></div></div></div>
+        <div class="card"><div class="hero b"><span class="serif" style="font-size:18px">Oaxaca coast</span><span style="font-size:11px;opacity:.85">Mexico · 14 nights</span></div>
+          <div class="body"><span class="serif price">$2,480</span> <span class="muted">total, flights included</span>
+            <div class="days"><div>Days 1–5 · Puerto Escondido</div><div>Days 6–10 · Mazunte</div><div>Days 11–15 · Oaxaca City food</div></div>
+            <div class="muted">See full itinerary ›</div>
+            <div class="btns"><span class="btn p">Flights</span><span class="btn s">Stays</span></div></div></div>
+        <div class="card"><div class="hero c"><span class="serif" style="font-size:18px">Ericeira + Madeira</span><span style="font-size:11px;opacity:.85">Portugal · 14 nights</span></div>
+          <div class="body"><span class="serif price">$3,150</span> <span class="muted">total, flights included</span>
+            <div class="days"><div>Days 1–7 · Ericeira surf</div><div>Days 8–15 · Madeira</div></div>
+            <div class="muted">See full itinerary ›</div>
+            <div class="btns"><span class="btn p">Flights</span><span class="btn s">Stays</span></div></div></div>
+      </div>
+      <div class="muted" style="margin-top:12px">Each card opens to the day-by-day plan and cost breakdown. The scores, reviewer notes and agent details stay hidden.</div>
+    </div>
+  </div>
+</div>
