@@ -1,0 +1,46 @@
+# Fly.io config for Tradewinds. See DEPLOY.md. Rate limits and the queue live in-process,
+# so run exactly ONE machine: `fly scale count 1`.
+app = "tradewinds"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  TRADEWINDS_TRUST_PROXY = "1"
+  TRADEWINDS_RUNS_DIR = "/data/runs"
+  TRADEWINDS_LEDGER_PATH = "/data/spend-ledger.json"
+  TRADEWINDS_MODEL = "claude-sonnet-5-5"
+  TRADEWINDS_LIGHT_MODEL = "claude-haiku-5-5"
+  TRADEWINDS_DAILY_BUDGET_USD = "20"
+  TRADEWINDS_RUN_BUDGET_USD = "1.00"
+  LOG_LEVEL = "INFO"
+
+[[mounts]]
+  source = "tradewinds_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 40
+    hard_limit = 80
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,0 +1,13 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+runs
+evals
+tests
+docs
+.superpowers
+.claude
+**/__pycache__
+*:Zone.Identifier

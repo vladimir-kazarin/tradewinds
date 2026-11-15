@@ -266,3 +266,32 @@ def test_plan_notes_are_bounded(client):
     assert client.post("/api/plan?speed=100", json={**body, "notes": ["dorms ok"]}).status_code == 200
     assert client.post("/api/plan", json={**body, "notes": ["x"] * 6}).status_code == 422
     assert client.post("/api/plan", json={**body, "notes": ["x" * 501]}).status_code == 422
+
+
+def test_security_headers_on_pages_and_api(client):
+    for path in ("/", "/api/health"):
+        h = client.get(path).headers
+        assert "default-src 'self'" in h["content-security-policy"]
+        assert "frame-ancestors 'none'" in h["content-security-policy"]
+        assert h["x-content-type-options"] == "nosniff"
+        assert h["referrer-policy"] == "strict-origin-when-cross-origin"
+        assert "max-age=" in h["strict-transport-security"]
+
+
+def test_vendored_assets_are_cached_long_app_assets_revalidate(client):
+    assert "immutable" in client.get("/static/vendor/leaflet.js").headers["cache-control"]
+    assert client.get("/static/app.js").headers["cache-control"] == "no-cache"
+
+
+def test_old_run_logs_are_pruned(tmp_path):
+    import app
+    for i in range(7):
+        p = tmp_path / f"{i}.jsonl"
+        p.write_text("{}")
+        os_time = 1_000_000 + i
+        import os
+        os.utime(p, (os_time, os_time))
+    (tmp_path / "spend-ledger.json").write_text("{}")
+    app.prune_run_logs(tmp_path, keep=3)
+    assert sorted(p.name for p in tmp_path.glob("*.jsonl")) == ["4.jsonl", "5.jsonl", "6.jsonl"]
+    assert (tmp_path / "spend-ledger.json").exists()

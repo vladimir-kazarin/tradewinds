@@ -34,7 +34,8 @@ from schemas import ChatTurn, DestinationOption, TripBrief
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
-RUNS = ROOT / "runs"
+RUNS = Path(os.getenv("TRADEWINDS_RUNS_DIR", str(ROOT / "runs")))  # a Fly volume in production
+RUNS_KEEP = int(os.getenv("TRADEWINDS_RUNS_KEEP", "500"))
 DEMO_DIR = ROOT / "demo"
 DEMO_QUESTIONS = DEMO_DIR / "questions_run.jsonl"
 DEMO_OPTIONS = DEMO_DIR / "options_run.jsonl"
@@ -55,8 +56,33 @@ MAX_NOTE_CHARS = 500
 MAX_PLAN_BODY_CHARS = 30_000  # a real brief + option is ~3k; bigger means abuse
 MIN_SPEED = 0.1
 
-RUNS.mkdir(exist_ok=True)
+RUNS.mkdir(parents=True, exist_ok=True)
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("tradewinds")
+
+CSP = "; ".join([
+    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'",  # Leaflet sets inline styles
+    "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org",
+    "font-src 'self'", "connect-src 'self'", "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'",
+])
+SECURITY_HEADERS = {
+    "content-security-policy": CSP,
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+}
+VENDOR_CACHE = "public, max-age=31536000, immutable"
+
+
+def prune_run_logs(directory: Path, keep: int) -> None:
+    """Keep only the newest `keep` run logs so the volume can't fill up."""
+    logs = sorted(directory.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)
+    for old in logs[keep:]:
+        try:
+            old.unlink()
+        except OSError as e:
+            log.warning("could not delete old run log %s: %s", old, e)
 
 # Spend and abuse protection for live runs (demo replays cost nothing and aren't limited).
 MAX_CONCURRENT = int(os.getenv("TRADEWINDS_MAX_CONCURRENT", "2"))
@@ -72,11 +98,24 @@ IPV6_PREFIX = 64  # one person usually controls a whole /64
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    prune_run_logs(RUNS, RUNS_KEEP)
     yield
     tracing.flush()  # send buffered traces before the process exits
 
 
-app = FastAPI(title="Tradewinds", lifespan=_lifespan)
+app = FastAPI(title="Tradewinds", lifespan=_lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+
+
+@app.middleware("http")
+async def _headers(request: Request, call_next: Callable[[Request], Awaitable[Any]]) -> Any:
+    response = await call_next(request)
+    response.headers.update(SECURITY_HEADERS)
+    path = request.url.path
+    if path.startswith("/static/vendor/"):
+        response.headers["cache-control"] = VENDOR_CACHE
+    elif path == "/" or path.startswith("/static/"):
+        response.headers["cache-control"] = "no-cache"  # revalidate app code on every deploy
+    return response
 _live_slots = asyncio.Semaphore(MAX_CONCURRENT)
 
 
@@ -233,6 +272,7 @@ async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo) -> None:
                 f.write(json.dumps({"type": "error", "message": f"{type(e).__name__}: {e}"}) + "\n")
                 log.exception("run failed")
                 await q.put({"type": "error", "message": FRIENDLY_ERROR})
+    prune_run_logs(RUNS, RUNS_KEEP)
 
 
 @app.post("/api/options")
