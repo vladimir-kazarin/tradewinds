@@ -52,10 +52,10 @@ class Usage:
     output_tokens: int = 0
     cost_usd: float = 0.0
 
-    def add(self, u: Any) -> None:
+    def add(self, u: Any, model: str | None = None) -> None:
         self.input_tokens += u.input_tokens
         self.output_tokens += u.output_tokens
-        delta = cost_usd(self.model, u.input_tokens, u.output_tokens)
+        delta = cost_usd(model or self.model, u.input_tokens, u.output_tokens)
         self.cost_usd += delta
         if self.ledger is not None:
             self.ledger.add(delta)
@@ -72,6 +72,7 @@ class Agent(Generic[T]):
     tools: list[str] = field(default_factory=list)
     max_turns: int = 8
     max_tokens: int = 4096
+    model: str = MODEL
 
     def _submit_tool(self) -> dict[str, Any]:
         return {
@@ -91,11 +92,11 @@ class Agent(Generic[T]):
                           emit: Emit, usage: Usage) -> Any:
         system = self.system + SUBMIT_RULE
         trace_input = {"system": system, "messages": tracing.jsonable(messages)} if tracing.enabled() else None
-        with tracing.observation(f"{self.name} · turn {turn + 1}", as_type="generation", model=MODEL,
+        with tracing.observation(f"{self.name} · turn {turn + 1}", as_type="generation", model=self.model,
                                  input=trace_input, model_parameters={"max_tokens": self.max_tokens}) as gen:
             try:
                 resp = await client().messages.create(
-                    model=MODEL, max_tokens=self.max_tokens, system=system,
+                    model=self.model, max_tokens=self.max_tokens, system=system,
                     tools=tools, tool_choice={"type": "auto"}, messages=messages,
                 )
             except (APIStatusError, APIConnectionError) as e:
@@ -104,8 +105,8 @@ class Agent(Generic[T]):
             u = resp.usage
             gen.update(output=tracing.jsonable(resp.content) if tracing.enabled() else None,
                        usage_details={"input": u.input_tokens, "output": u.output_tokens},
-                       cost_details={"total": cost_usd(usage.model, u.input_tokens, u.output_tokens)})
-            usage.add(u)  # may raise RunBudgetExceeded; the generation is still recorded
+                       cost_details={"total": cost_usd(self.model, u.input_tokens, u.output_tokens)})
+            usage.add(u, self.model)  # may raise RunBudgetExceeded; the generation is still recorded
             return resp
 
     async def _run_tool(self, call: Any) -> dict[str, Any]:

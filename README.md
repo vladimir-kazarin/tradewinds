@@ -1,10 +1,10 @@
 # Tradewinds 🌴
 
-**Tell it where you'd like to go, answer a couple of questions, and a crew of seven AI agents finds three trips and plans the one you pick.**
+**A trip planner for backpackers. Tell it where you'd like to go, answer a couple of questions, and a crew of seven AI agents finds three best-value trips and plans the one you pick.**
 
-> "Somewhere warm in December, I'm burnt out. Want to learn to surf, great food, no party scene."
+> "Somewhere warm and cheap in December, I'm burnt out. Want to learn to surf, great food, no party hostels."
 
-The Brief agent asks only what's missing (dates, origin, budget, must-sees, one country or several). Then you get three trips, each with a rough total cost. Open one and the rest of the crew plans it: a day-by-day itinerary on a map, flights and stays that match the itinerary's towns, a budget, a reviewer sign-off, and prefilled flight and stay searches. While they work you see a spinning globe with the crew in a ring around it and one friendly status line.
+Every agent hunts for value: cheap gateways and overland legs, hostel dorms or guesthouses, street food, free and cheap activities, and never over your budget. The Brief agent asks only what's missing (dates, origin, budget, dorm or private, must-sees, one country or several). Then you get three trips, each with a rough total and a per-day cost. Open one and the rest of the crew plans it: a day-by-day itinerary on a map, flights and stays that match the itinerary's towns, a budget, a reviewer sign-off, and prefilled flight and stay searches. While they work you see a spinning globe with the crew in a ring around it and one friendly status line.
 
 ## Run it
 
@@ -15,14 +15,17 @@ cd backend && uvicorn app:app --reload --port 8000
 # open http://localhost:8000   (add ?demo=1 to force the demo with a key set)
 ```
 
-Tests:
+Tests and evals:
 
 ```bash
-pytest                       # unit + API tests
-python demo/make_demo.py     # integration test of both steps; rewrites demo/*_run.jsonl
+pytest                                   # unit + API tests (offline)
+python demo/make_demo.py                 # integration test of both steps; rewrites demo/*_run.jsonl
+python evals/run_eval.py --limit 3       # LIVE eval smoke (~$0.60 per case with the plan step)
+python evals/run_eval.py --judge --label sonnet55          # full 20-case set + Haiku value judge
+python evals/run_eval.py --compare evals/results/A.json evals/results/B.json
 ```
 
-Optional settings: `TRADEWINDS_MODEL` (default `claude-sonnet-5-5`) and `TRADEWINDS_MAX_CONCURRENT` (default 2 live runs).
+All settings are listed in `.env.example`: the model, spend caps (per run, per day), per-IP hourly limits, the queue cap, `TRADEWINDS_TRUST_PROXY` for Fly.io, and optional Langfuse keys for tracing.
 
 ## Architecture
 
@@ -51,6 +54,9 @@ The browser carries the brief and the chosen option between the two calls, so th
 | Tools | `backend/tools.py` | Geocoding, historical climate for the travel dates, live wave outlook (Open-Meteo, no API key). |
 | MCP server | `backend/mcp_server.py` | The same tools over MCP: `claude mcp add tradewinds -- python backend/mcp_server.py` |
 | Streaming | `backend/app.py` | FastAPI + SSE over POST. Live runs are recorded as JSONL; without a key the endpoints replay `demo/*_run.jsonl`. A semaphore caps concurrent runs and a disconnect cancels the run. |
+| Limits | `backend/limits.py` | Per-IP hourly rate limits, a queue cap, a per-run cost cap and a daily spend cap, so a public key can't be drained. |
+| Tracing | `backend/tracing.py` | Langfuse: a trace per run, grouped by the traveler's session, with an agent observation per helper, a generation per model call (usage and cost) and a tool observation per tool call. Off without keys. |
+| Evals | `evals/` | 20 backpacker prompts with expected facts, deterministic checks, an optional Claude Haiku 5.5 value judge, and run-to-run comparison. |
 | UI | `frontend/index.html` | One page, vanilla JS: ask, follow-up chat, globe with crew ring, three cards, planned trip with map, budget and booking links. |
 
 ## Design decisions
@@ -59,4 +65,4 @@ The browser carries the brief and the chosen option between the two calls, so th
 - **Why a fixed pipeline and not an LLM router?** The order of steps is known in advance, so code handles control flow and the model handles judgment. Runs are cheaper, more predictable and easier to evaluate.
 - **Why options first, plan on click?** Planning three trips fully would triple the cost and the wait. A rough cost per option is enough to choose; the full plan replaces it.
 - **Why code for links, checks and status?** Anything that has to be exactly right (URLs, sums, matching towns) is computed or checked in code rather than trusted to the model.
-- **Next steps:** deploy to Fly.io with spend caps and rate limiting, an eval set of about 20 prompts, tracing, prompt caching, and saved/shareable trips.
+- **Next steps:** deploy to Fly.io, prompt caching on the agents' system prompts, real flight prices instead of model estimates (the eval judge flags optimistic fares), and saved/shareable trips.

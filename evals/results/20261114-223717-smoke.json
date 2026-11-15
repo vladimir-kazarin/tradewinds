@@ -1,0 +1,87 @@
+{
+ "label": "smoke",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 2,
+  "errors": 0,
+  "all_checks_pass_rate": 1.0,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 1.0,
+   "brief_nights": 1.0,
+   "brief_origin": 1.0,
+   "days_and_dates": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 1.0,
+   "reviewer_approved": 1.0,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": 3.5,
+  "judge_fit_avg": 4.0,
+  "cost_usd_total": 1.213,
+  "seconds_avg": 286.1
+ },
+ "results": [
+  {
+   "id": "vague-warm",
+   "asked_questions": true,
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Oaxaca Coast: Mazunte & Zipolite",
+    "El Salvador Surf Coast: El Zonte & El Tunco",
+    "Colombian Caribbean Coast: Palomino & Santa Marta"
+   ],
+   "plan_total_usd": 875,
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Mexico's Oaxaca coast fits the warm, cheap, beachy, one-country brief well, and dorm and street-food prices are realistic. The weak point is the flight: the plan assumes a $340 fare and a $400 cap for ORD to Huatulco, which is optimistic for a connecting January trip, and at $450+ the total breaks $900. The numbers also don't agree: the headline says $795 all-in, the budget table totals $875 with buffer, the option card says $810, and the $300 daily-spend estimate conflicts with the $200 food line. The transfers array is empty even though $45 is budgeted for transfers."
+   },
+   "cost_usd": 0.5576,
+   "seconds": 260.1
+  },
+  {
+   "id": "complete-no-questions",
+   "asked_questions": false,
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Oaxaca Coast: Mazunte & San Agustinillo",
+    "Costa Maya, Quintana Roo: Mahahual & Bacalar",
+    "Nicaragua Pacific Coast: Las Peñitas & León"
+   ],
+   "plan_total_usd": 1368,
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Lodging, food and activity estimates are realistic for Oaxaca's coast, and the $1,244 plus buffer adds up to $1,368 under the cap. The biggest weakness is airfare: the plan assumes $650 for two separate tickets (SEA-MEX $400 plus MEX-HUX $250), which is optimistic for February and leaves only the $124 buffer to absorb a miss. It also doesn't price the Huatulco-Mazunte transfer explicitly (transfers list is empty). Fit is good for quiet, seafood and beaches, but Mazunte and San Agustinillo have rough surf and strong currents, so \"beaches\" means lounging more than swimming, and the trip spends two nights in Huatulco for logistics rather than the vibe."
+   },
+   "cost_usd": 0.6557,
+   "seconds": 312.2
+  }
+ ]
+}
