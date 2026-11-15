@@ -1,18 +1,25 @@
 # Tradewinds 🌴
 
-**Describe how you feel, and a crew of seven AI agents plans the trip while you watch.**
+**Tell it where you'd like to go, answer a couple of questions, and a crew of seven AI agents finds three trips and plans the one you pick.**
 
-> "Two weeks from Dec 1, burnt out, want chill + tropical, learn to surf, great food, no party scene. From Boston, ~$3k."
+> "Somewhere warm in December, I'm burnt out. Want to learn to surf, great food, no party scene."
 
-That prompt turns into a scored shortlist of destinations, a day-by-day itinerary on a map, flights and stays, a budget, and a reviewer sign-off. Every agent step and tool call streams live to the UI.
+The Brief agent asks only what's missing (dates, origin, budget, must-sees, one country or several). Then you get three trips, each with a rough total cost. Open one and the rest of the crew plans it: a day-by-day itinerary on a map, flights and stays that match the itinerary's towns, a budget, a reviewer sign-off, and prefilled flight and stay searches. While they work you see a spinning globe with the crew in a ring around it and one friendly status line.
 
 ## Run it
 
 ```bash
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...        # leave unset to run the recorded demo
+pip install -r requirements-dev.txt         # app deps + pytest
+export ANTHROPIC_API_KEY=sk-ant-...         # leave unset to replay the recorded demo
 cd backend && uvicorn app:app --reload --port 8000
-# open http://localhost:8000
+# open http://localhost:8000   (add ?demo=1 to force the demo with a key set)
+```
+
+Tests:
+
+```bash
+pytest                       # unit + API tests
+python demo/make_demo.py     # integration test of both steps; rewrites demo/*_run.jsonl
 ```
 
 Optional settings: `TRADEWINDS_MODEL` (default `claude-sonnet-5-5`) and `TRADEWINDS_MAX_CONCURRENT` (default 2 live runs).
@@ -20,28 +27,36 @@ Optional settings: `TRADEWINDS_MODEL` (default `claude-sonnet-5-5`) and `TRADEWI
 ## Architecture
 
 ```
-prompt ─► Brief ─► Scout ─► Vibe Judge ─► ┬─ Itinerary ─┬─► Budget ─► Reviewer ─► final
-                    │ tools                └─ Logistics ─┘                │
-                    │ geocode, climate          (parallel)                │ rejected?
-                    ▼                                                     ▼
-              Open-Meteo APIs                         Itinerary revises (max 2 rounds)
+ STEP 1 · POST /api/options                         STEP 2 · POST /api/plan (per card, on click)
+ chat ─► Brief ─┬─► Scout ─► Judge ─► 3 options     brief + option ─► Itinerary ─► Logistics
+                │   geocode,  rank,   rough cost                       geocode,     stays per base
+                │   climate   pitch                                    ocean           │
+                └─► questions (one round max)                                          ▼
+                                                                   Budget ─► Reviewer ─┐
+                                                                      ▲   revise ≤ 2   │
+                                                                      └────────────────┘
 ```
 
-| Piece | File | What it shows |
+The browser carries the brief and the chosen option between the two calls, so the server keeps no session.
+
+| Piece | File | What it does |
 |---|---|---|
-| Agent runtime | `backend/agent.py` | Tool-use loop written directly on the raw Anthropic SDK (no framework). Tools run in parallel, tool errors go back to the model instead of being raised, and there's a max-turns limit that forces `submit` on the last turn. |
-| Structured output | `backend/schemas.py` | Each agent finishes by calling a `submit` tool whose schema is a Pydantic model. Invalid output is sent back to the model with the validation error. |
-| Orchestration | `backend/crew.py` | Plain Python async. Fixed pipeline steps, a parallel fan-out with `asyncio.gather`, and a reviewer → revision feedback loop. |
-| Tools | `backend/tools.py` | Real data: geocoding, historical climate for the travel dates, and a live wave outlook (Open-Meteo, no API key). |
-| MCP server | `backend/mcp_server.py` | The same tools served over MCP: `claude mcp add tradewinds -- python backend/mcp_server.py` |
-| Streaming | `backend/app.py` | FastAPI + SSE. Live runs are recorded as JSONL and can be replayed. A semaphore caps concurrent runs, and a client disconnect cancels the run so it stops using tokens. |
-| Demo / test | `demo/make_demo.py` | Runs the real orchestrator with a scripted fake model. It's an integration test of the loop, the parallel step and the revision step, and it also produces the demo recording. |
-| UI | `frontend/index.html` | One page: crew roster, live tool feed, scored destination cards, Leaflet map, day timeline with "revised" badges, budget breakdown. |
+| Agent runtime | `backend/agent.py` | Tool-use loop on the raw Anthropic SDK (no framework). Tools run in parallel, tool errors go back to the model, and the last turn forces `submit`. |
+| Contracts | `backend/schemas.py` | Each agent finishes by calling a `submit` tool whose schema is a Pydantic model. Sums and date arithmetic are validators, so bad output goes back to the model with the error. |
+| Agents | `backend/crew.py` | The seven agents as data. The Brief's second round uses an output with no room for questions, which is what enforces one question round. |
+| Orchestration | `backend/pipeline.py` | `plan_options()` and `plan_trip()`, plain async. Logistics runs after the itinerary so stays match its towns; a reviewer rejection re-runs both. |
+| Checks | `backend/checks.py` | Code checks across agents: stays vs itinerary bases and nights, countries vs the chosen trip. Mismatches go back to the agent once. |
+| Booking links | `backend/links.py` | Google Flights and Booking.com searches built from validated fields. The model never writes URLs. |
+| Status line | `backend/status.py` | Turns agent events into friendly sentences ("Checking December weather near Nosara…"). No tokens spent. |
+| Tools | `backend/tools.py` | Geocoding, historical climate for the travel dates, live wave outlook (Open-Meteo, no API key). |
+| MCP server | `backend/mcp_server.py` | The same tools over MCP: `claude mcp add tradewinds -- python backend/mcp_server.py` |
+| Streaming | `backend/app.py` | FastAPI + SSE over POST. Live runs are recorded as JSONL; without a key the endpoints replay `demo/*_run.jsonl`. A semaphore caps concurrent runs and a disconnect cancels the run. |
+| UI | `frontend/index.html` | One page, vanilla JS: ask, follow-up chat, globe with crew ring, three cards, planned trip with map, budget and booking links. |
 
-## Design decisions (interview notes)
+## Design decisions
 
-- **Why no framework?** The loop is about 80 lines, and owning it makes retries, validation, cost tracking and termination easy to see and control. LangGraph is worth adding when you need durable checkpoints and human-in-the-loop resume.
-- **Why a fixed pipeline and not an LLM router?** The order of steps is known in advance, so the code handles control flow and the model handles judgment. That makes runs cheaper, deterministic, and easier to debug and evaluate.
-- **Why submit-as-a-tool?** One mechanism covers both tool calls and the final answer, the output is schema-validated, and the model gets a chance to fix its own errors.
-- **Hallucination guardrails:** the scout has to call `climate_for_window` before it says anything about weather, the judge scores against a fixed rubric, and the reviewer checks hard constraints (night counts, budget total, avoid-list, transfers that aren't realistic).
-- **Next steps:** an eval set of about 20 prompts with checks on constraint violations, Langfuse tracing, prompt caching on system prompts, GitHub OAuth for live runs on a public site, and a Claude Code plugin with a `/plan-trip` command.
+- **Why no framework?** The loop is about 80 lines, and owning it makes retries, validation, cost tracking and termination easy to see and control.
+- **Why a fixed pipeline and not an LLM router?** The order of steps is known in advance, so code handles control flow and the model handles judgment. Runs are cheaper, more predictable and easier to evaluate.
+- **Why options first, plan on click?** Planning three trips fully would triple the cost and the wait. A rough cost per option is enough to choose; the full plan replaces it.
+- **Why code for links, checks and status?** Anything that has to be exactly right (URLs, sums, matching towns) is computed or checked in code rather than trusted to the model.
+- **Next steps:** deploy to Fly.io with spend caps and rate limiting, an eval set of about 20 prompts, tracing, prompt caching, and saved/shareable trips.

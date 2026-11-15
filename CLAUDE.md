@@ -4,48 +4,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Tradewinds is a multi-agent trip planner. A free-form prompt goes through a fixed pipeline of seven Claude agents, and every step is streamed to a single-page UI over SSE. It is written directly on the raw Anthropic SDK with no agent framework. That is a deliberate choice (see README "Design decisions"), so don't introduce LangChain/LangGraph or similar.
+Tradewinds is a multi-agent trip planner, now built as a consumer product. A traveler chats with a Brief agent (at most one round of follow-up questions), gets three trip options with a rough cost, and opens one to have the rest of the crew plan it. Seven Claude agents in a fixed pipeline do the work, and progress streams to a single-page UI over SSE. It is written directly on the raw Anthropic SDK with no agent framework. That is a deliberate choice (see README "Design decisions"), so don't introduce LangChain/LangGraph or similar. The UI must stay non-technical: never show tool names, thoughts, scores, token counts or reviewer notes to travelers.
+
+Specs: `SPEC.md` (V1 baseline) and `SPEC-product-flow.md` (current product flow delta).
 
 ## Commands
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt        # requirements.txt + pytest
 
 # Run the server (must run from backend/, since modules use flat imports like `from tools import ...`)
-cd backend && uvicorn app:app --reload --port 8000     # http://localhost:8000
+cd backend && uvicorn app:app --reload --port 8000     # http://localhost:8000  (?demo=1 forces replay)
 
-# Integration test + regenerate the demo recording (no API key, no network)
+# Unit + API tests (tests/conftest.py puts backend/ on sys.path)
+pytest
+pytest tests/test_links.py::test_open_jaw_flight_url   # single test
+
+# Integration test of both steps + regenerate the demo recordings (no API key, no network)
 python demo/make_demo.py
 
 # Expose the tools over MCP
 claude mcp add tradewinds -- python backend/mcp_server.py
 ```
 
-There is no pytest suite, linter config, or build step. `demo/make_demo.py` is the only test: it runs the real orchestrator with a scripted fake model and stubbed tools, then asserts on the result (reviewer approved after one revision, stay nights sum to brief nights, budget lines sum to total). **It overwrites `demo/sample_run.jsonl`**, which is the file the UI replays in demo mode.
+`demo/make_demo.py` runs the real pipeline with a scripted fake model and stubbed tools through three runs (vague prompt → questions; answer → 3 options; plan the best option) and asserts on the result (one question round, 3 ranked options with consistent rough costs and one multi-country option, reviewer approved after one revision, logistics re-ran after the revision, stays match itinerary bases, sums add up, links are https). **It overwrites `demo/questions_run.jsonl`, `demo/options_run.jsonl` and `demo/plan_run.jsonl`**, which the server replays in demo mode. Commit them with any event or schema change.
 
-Env vars: `ANTHROPIC_API_KEY` (if unset, `/api/plan` always replays the demo), `TRADEWINDS_MODEL` (default `claude-sonnet-5-5`), `TRADEWINDS_MAX_CONCURRENT` (default 2).
+Env vars: `ANTHROPIC_API_KEY` (if unset, both endpoints replay the demo), `TRADEWINDS_MODEL` (default `claude-sonnet-5-5`), `TRADEWINDS_MAX_CONCURRENT` (default 2).
 
 ## Architecture
 
 ```
-Brief → Scout → Vibe Judge → (Itinerary ‖ Logistics) → Budget → Reviewer
-                                  ↑                                  │
-                                  └──── revise, MAX_REVISIONS=2 ─────┘
+STEP 1  POST /api/options   chat → Brief ─┬─ questions (one round)
+                                          └─ Scout → Judge → 3 ranked options (rough cost)
+STEP 2  POST /api/plan      brief + option → Itinerary → Logistics → Budget → Reviewer
+                                                 ↑                               │
+                                                 └── revise, MAX_REVISIONS=2 ────┘
 ```
 
-- **`backend/agent.py`**: the whole runtime. `Agent.run()` loops over model calls with `tool_choice: any`, and on the final turn it forces `submit`. Every agent finishes by calling a synthetic `submit` tool whose `input_schema` is `output.model_json_schema()`. If Pydantic validation fails, the error goes back to the model as an `is_error` tool_result. Real tool calls in a turn run concurrently. Every `tool_use` must get a `tool_result`, including skipped ones.
-- **`backend/schemas.py`**: Pydantic models that serve as the contracts between agents. Changing a field changes the submit schema the model sees, the JSON passed to downstream agents, and what the frontend renders.
-- **`backend/crew.py`**: agent definitions (system prompt, tools, output model, max_turns) and `plan_trip()`, plain async orchestration. Agents receive upstream outputs as JSON text in the user message (`_j()`), not as shared state. If the judge's `pick` doesn't match a scout option name, it falls back to the first option.
-- **`backend/tools.py`**: Open-Meteo tools (geocode, historical climate proxy, live marine). `TOOL_REGISTRY` maps name → (async fn, Anthropic tool schema). `run_tool()` never raises; errors come back as `{"error": ...}` dicts so the model can recover. `agent.py` marks a result as `is_error` when it contains an `"error"` key. `mcp_server.py` wraps the same `run_tool` (mcp>=2 `MCPServer` API).
-- **`backend/app.py`**: FastAPI + `sse-starlette`. `emit(ev)` is the single event channel. Live runs write each event to `runs/<ts>.jsonl` with a `_delay` field (gitignored), and the replay endpoint uses that to reproduce timing. A semaphore limits concurrent live runs, and client disconnect cancels the worker task.
-- **`frontend/index.html`**: a single file of vanilla JS with vendored Leaflet and fonts. It consumes `EventSource("/api/plan?...")` and dispatches on `ev.type`.
+- **`backend/agent.py`**: the whole runtime (unchanged by the product flow). `Agent.run()` loops over model calls with `tool_choice: any`, and on the final turn it forces `submit`. Every agent finishes by calling a synthetic `submit` tool whose `input_schema` is `output.model_json_schema()`. If Pydantic validation fails, the error goes back to the model as an `is_error` tool_result. Real tool calls in a turn run concurrently. Every `tool_use` must get a `tool_result`, including skipped ones.
+- **`backend/schemas.py`**: Pydantic models that serve as the contracts between agents, plus single-model invariants as validators (brief nights = date span, rough cost and budget totals = sum of parts, IATA airport codes, `BriefResult` has questions xor brief). Changing a field changes the submit schema the model sees, the JSON passed downstream, the recordings, and what the frontend renders.
+- **`backend/crew.py`**: agent definitions only. `CREW` is the 7 agents in UI ring order; `ALL_AGENTS` adds `brief_decide_agent` (same name `brief`, output `BriefDecision`), used when the transcript already has an assistant turn: this is what makes a second question round impossible.
+- **`backend/pipeline.py`**: `plan_options(turns, emit)` and `plan_trip(brief, option, emit)`, plain async. Agents receive upstream outputs as JSON text (`_j()`). `rank_options()` orders by the judge's ranking/pick with fallbacks to scout order. Itinerary runs before Logistics; `checks.py` mismatches trigger one re-run of the responsible agent; a reviewer rejection re-runs Itinerary and then Logistics. All emits go through `status.with_status`.
+- **`backend/checks.py`**: cross-agent checks (stays vs itinerary base runs, countries vs option) returning issue sentences. Names compare casefolded and accent-stripped.
+- **`backend/links.py`**: Google Flights / Booking.com search URLs from validated fields. The model never writes URLs.
+- **`backend/status.py`**: wraps `emit`, adding friendly `status` events from agent/tool events.
+- **`backend/tools.py`**: Open-Meteo tools (geocode, historical climate proxy, live marine). `TOOL_REGISTRY` maps name → (async fn, Anthropic tool schema). `run_tool()` never raises; errors come back as `{"error": ...}` dicts so the model can recover. `mcp_server.py` wraps the same `run_tool` (mcp>=2 `MCPServer` API).
+- **`backend/app.py`**: FastAPI + `sse-starlette`, POST endpoints validated by `OptionsRequest` / `PlanRequest` (≤8 turns, last from user). Live runs log every event to `runs/<ms>.jsonl` with `_delay` (opened only after the semaphore is acquired). Demo replay picks `questions_run` vs `options_run` by whether the transcript has an assistant turn; planning a non-recorded option prepends a "Demo: showing a sample plan" status. `usage` events are log-only. Exceptions reach the browser as a generic friendly `error`.
+- **`frontend/index.html`**: a single file of vanilla JS with vendored Leaflet and fonts. Reads SSE via `fetch` + stream reader (EventSource can't POST) and dispatches on `ev.type`. Escape every model string with `esc()`; links pass through `safeUrl()`. Map tiles come from tile.openstreetmap.org.
 
 ### Event protocol
 
-Event types emitted are `run_start`, `agent_start`, `thought`, `tool_call`, `tool_result`, `agent_done`, `agent_error`, `revision`, `final`, and `error`. The backend (`agent.py`, `crew.py`, `app.py`) and the frontend `switch (ev.type)` must stay in sync, and so must the recorded `demo/sample_run.jsonl`. If you change an event's shape, regenerate the demo.
+`run_start {step, agents}`, `agent_start`, `agent_done`, `agent_skip` (step 2 marks Brief/Scout/Judge done), `status {text}`, `questions {reply, questions}`, `options {reply, brief, options:[{option, pitch, best}]}`, `plan {option_name, itinerary, logistics, budget, review, links}`, `revision`, `agent_error`, `error`, and `usage` (log only, never streamed). `thought`, `tool_call` and `tool_result` are still emitted and recorded but the UI ignores them. Backend, the frontend handlers and the recordings must stay in sync; regenerate the demo after any change.
 
 ### Demo script coupling
 
-`demo/make_demo.py` monkeypatches `agent._client` and `agent.run_tool`. `FakeMessages` identifies which agent is calling by **matching the `system` prompt against `crew.CREW`**, then pops the next scripted response from that agent's list in `SCRIPTS`. Fake tool results are keyed by `(tool, place)` or `(tool, lat)`. As a result:
-- Adding an agent, adding a turn, or changing the revision flow requires matching entries in `SCRIPTS`. Otherwise the script hits `StopIteration` or a missing key.
-- Schema changes require updating the scripted submit payloads (`BRIEF`, `OPTS`, `ITIN`, and so on), or validation fails in a loop until max_turns.
+`demo/make_demo.py` monkeypatches `agent._client` and `agent.run_tool`. `FakeMessages` identifies the calling agent by **matching the `system` prompt against `crew.ALL_AGENTS`**, then pops the next scripted response from that agent's list in `SCRIPTS` (both Brief variants share the `brief` list). Fake tool results are keyed by `(tool, place)` or `(tool, lat)`. As a result:
+- Changing a system prompt is fine, but adding an agent, adding a turn, a check-triggered re-run, or changing the revision flow requires matching entries in `SCRIPTS`. Otherwise the script hits `StopIteration` or a missing key.
+- Schema changes require updating the scripted submit payloads (`QUESTIONS`, `DECISION`, `OPTS`, `VERDICT`, `ITIN`, `LOG`, `BUDGET`, …), or validation fails in a loop until max_turns.

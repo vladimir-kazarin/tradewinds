@@ -1,6 +1,6 @@
 # Delta spec: Product flow (chat → 3 options → plan on demand)
 
-Status: proposed (2026-11-14)
+Status: implemented (2026-11-14) on branch `feat/product-flow`
 Baseline: `SPEC.md` (V1 as-built). This document only describes what changes.
 
 ## Intent
