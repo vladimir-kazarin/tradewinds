@@ -1,0 +1,7 @@
+{"type": "run_start", "step": "options", "agents": [{"name": "brief", "role": "Trip Brief"}, {"name": "scout", "role": "Destination Scout"}, {"name": "judge", "role": "Vibe Judge"}, {"name": "itinerary", "role": "Itinerary Builder"}, {"name": "logistics", "role": "Logistics"}, {"name": "budget", "role": "Budget"}, {"name": "reviewer", "role": "Reviewer"}], "_delay": 0.0}
+{"type": "agent_start", "agent": "brief", "role": "Trip Brief", "_delay": 0.0}
+{"type": "status", "text": "Reading your trip\u2026", "_delay": 0.0}
+{"type": "thought", "agent": "brief", "text": "Lots of feeling, few facts: I'll ask the essentials.", "_delay": 1.2}
+{"type": "agent_done", "agent": "brief", "seconds": 1.2, "output": {"reply": "That sounds like exactly what you need. A few quick things so I plan it right:", "questions": ["Which dates, roughly, and for how long?", "Where would you be flying from?", "What's your budget for everything, flights included?", "Happy with one country, or would you like to combine two?"], "brief": null}, "_delay": 0.0}
+{"type": "questions", "reply": "That sounds like exactly what you need. A few quick things so I plan it right:", "questions": ["Which dates, roughly, and for how long?", "Where would you be flying from?", "What's your budget for everything, flights included?", "Happy with one country, or would you like to combine two?"], "_delay": 0.0}
+{"type": "usage", "input_tokens": 1800, "output_tokens": 650, "_delay": 0.0}

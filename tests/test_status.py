@@ -64,3 +64,10 @@ def test_status_text_never_contains_tool_names():
     for t in texts:
         for banned in ("geocode", "climate", "ocean_conditions", "submit"):
             assert banned not in t
+
+
+def test_nearest_known_place_wins():
+    st = {"type": "tool_result", "agent": "itinerary", "tool": "geocode",
+          "result": {"matches": [{"name": "Santa Teresa", "country": "Costa Rica", "lat": 9.6464, "lon": -85.1686}]}}
+    call = {"type": "tool_call", "agent": "itinerary", "tool": "ocean_conditions", "input": {"lat": 9.64, "lon": -85.19}}
+    assert _statuses(_run([NOSARA_GEO, st, call])) == ["Checking the waves near Santa Teresa…"]

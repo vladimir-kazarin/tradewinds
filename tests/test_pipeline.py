@@ -1,0 +1,45 @@
+from __future__ import annotations
+
+from pipeline import rank_options, render_transcript
+from schemas import ChatTurn, OptionPitch, OptionScore, ScoutReport, VibeVerdict
+
+
+def _scout(option_cr) -> ScoutReport:
+    names = ["Nicoya Peninsula", "Bocas del Toro", "Siargao"]
+    return ScoutReport(options=[option_cr.model_copy(update={"name": n, "why": f"why {n}"}) for n in names])
+
+
+def _verdict(pick: str, ranking: list[str], pitches: list[str]) -> VibeVerdict:
+    return VibeVerdict(scores=[OptionScore(name="x", vibe_fit=5, weather=5, budget_fit=5, ease=5, total=20)],
+                       pick=pick, reasoning="r", ranking=ranking,
+                       pitches=[OptionPitch(name=n, pitch=f"pitch {n}") for n in pitches])
+
+
+def _names(ranked) -> list[str]:
+    return [r.option.name for r in ranked]
+
+
+def test_rank_options_fallbacks(option_cr):
+    scout = _scout(option_cr)
+    # (a) case-insensitive pick goes first and is best
+    r = rank_options(scout, _verdict("nicoya peninsula", ["Siargao", "Nicoya Peninsula", "Bocas del Toro"], []))
+    assert _names(r) == ["Nicoya Peninsula", "Siargao", "Bocas del Toro"]
+    assert [x.best for x in r] == [True, False, False]
+    # (b) unknown pick, empty ranking -> scout order
+    r = rank_options(scout, _verdict("Atlantis", [], []))
+    assert _names(r) == ["Nicoya Peninsula", "Bocas del Toro", "Siargao"] and r[0].best
+    # (c) unknown name in ranking -> still 3, no duplicates
+    r = rank_options(scout, _verdict("Siargao", ["Atlantis", "Siargao", "Siargao"], []))
+    assert _names(r) == ["Siargao", "Nicoya Peninsula", "Bocas del Toro"]
+    assert sum(x.best for x in r) == 1
+    # (d) missing pitch -> option.why
+    r = rank_options(scout, _verdict("Siargao", [], ["Siargao"]))
+    assert r[0].pitch == "pitch Siargao" and r[1].pitch == "why Nicoya Peninsula"
+
+
+def test_render_transcript_marks_roles():
+    text = render_transcript([ChatTurn(role="user", text="warm please"),
+                              ChatTurn(role="assistant", text="When?"),
+                              ChatTurn(role="user", text="December")])
+    assert text.startswith("Today is ")
+    assert "Traveler: warm please" in text and "You asked: When?" in text and "Traveler: December" in text

@@ -51,11 +51,12 @@ def stay_mismatches(itinerary: Itinerary, logistics: Logistics, nights: int) -> 
     return issues
 
 
-def country_mismatches(option: DestinationOption, itinerary: Itinerary, logistics: Logistics) -> list[str]:
+def country_mismatches(option: DestinationOption, itinerary: Itinerary,
+                       logistics: Logistics | None = None) -> list[str]:
     allowed = {_norm(c) for c in option.countries}
     listed = ", ".join(option.countries)
     issues = [f"Day {d.day} ({d.base}) is in {d.country}, which isn't one of this trip's countries ({listed})."
               for d in itinerary.days if _norm(d.country) not in allowed]
     issues += [f"Stay in {s.base} is in {s.country}, which isn't one of this trip's countries ({listed})."
-               for s in logistics.stays if _norm(s.country) not in allowed]
+               for s in (logistics.stays if logistics else []) if _norm(s.country) not in allowed]
     return issues

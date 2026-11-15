@@ -49,10 +49,9 @@ class _Places:
             lat, lon = float(lat), float(lon)
         except (TypeError, ValueError):
             return None
-        for klat, klon, name in self._known:
-            if abs(klat - lat) <= NEAR_DEGREES and abs(klon - lon) <= NEAR_DEGREES:
-                return name
-        return None
+        close = [(abs(klat - lat) + abs(klon - lon), name) for klat, klon, name in self._known
+                 if abs(klat - lat) <= NEAR_DEGREES and abs(klon - lon) <= NEAR_DEGREES]
+        return min(close)[1] if close else None
 
 
 def _tool_status(tool: str, args: dict[str, Any], places: _Places) -> str | None:

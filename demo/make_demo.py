@@ -1,7 +1,7 @@
 """Record a demo run by driving the REAL orchestrator with a scripted fake model.
 
-This doubles as an integration test of the agent loop: tool calls, parallel agents,
-validation, and the reviewer->revision loop all execute for real; only the LLM and
+This doubles as an integration test of both steps: the question round, options,
+tool calls, validation, cross-agent checks and the reviewer->revision loop all execute for real; only the LLM and
 HTTP calls are stubbed. Run:  python demo/make_demo.py
 """
 from __future__ import annotations
@@ -19,10 +19,12 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 import agent as agent_mod  # noqa: E402
 import crew  # noqa: E402
+import pipeline  # noqa: E402
+from checks import stay_mismatches  # noqa: E402
+from schemas import ChatTurn, DestinationOption, TripBrief  # noqa: E402
 
-PROMPT = ("I've got two weeks starting Dec 1 and I'm honestly burnt out. I want somewhere chill and tropical, "
-          "warm water, maybe finally learn to surf properly, great food, NOT a party scene. "
-          "Flying from Boston, around $3k all in.")
+PROMPT = "Somewhere warm in December, I'm burnt out. Want to learn to surf, great food, no party scene."
+ANSWER = "Dec 1–15, from Boston, around $3k. One country or two is fine."
 
 _ids = itertools.count(1)
 
@@ -40,41 +42,63 @@ def resp(*blocks):
 
 
 # ---------------------------------------------------------------- scripted outputs
+QUESTIONS = dict(reply="That sounds like exactly what you need. A few quick things so I plan it right:",
+                 questions=["Which dates, roughly, and for how long?", "Where would you be flying from?",
+                            "What's your budget for everything, flights included?",
+                            "Happy with one country, or would you like to combine two?"])
+
 BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="Boston (BOS)", budget_usd=3000,
              vibe=["chill", "tropical", "warm water", "learn to surf", "great food", "quiet"],
              must_haves=["beginner-friendly surf lessons", "good local food"], avoid=["party scene"],
-             travel_style="Slow travel, 2-3 bases max; mid-range comfort; assumed solo traveler")
+             travel_style="Slow travel, 2-3 bases max; mid-range comfort; assumed solo traveler",
+             countries_wanted="either")
+DECISION = dict(reply="Perfect. Two slow, sunny weeks from Boston for around $3k. Finding three trips for you now.",
+                brief=BRIEF)
+
+
+def cost(flights, lodging, daily, transfers=0):
+    return dict(flights_usd=flights, lodging_usd=lodging, daily_spend_usd=daily, transfers_usd=transfers,
+                total_usd=flights + lodging + daily + transfers)
+
 
 OPTS = [
-    dict(name="Nicoya Peninsula", country="Costa Rica", lat=9.9781, lon=-85.6528,
+    dict(name="Nicoya Peninsula", countries=["Costa Rica"], lat=9.9781, lon=-85.6528,
          why="Laid-back surf towns (Nosara, Santa Teresa, Sámara) with gentle beginner breaks, yoga culture and "
              "great sodas. Dry season just starting.",
          weather_summary="Avg high 31°C / low 23°C, 2 of 15 days with rain, ~8 h sunshine/day",
-         est_flight_hours=6.5, tradeoffs="Dirt roads between towns; Santa Teresa pricier than it used to be."),
-    dict(name="Bocas del Toro", country="Panama", lat=9.3403, lon=-82.2420,
-         why="Caribbean islands on stilts, calm bays, cheap and very slow-paced.",
+         est_flight_hours=6.5, tradeoffs="Dirt roads between towns; Santa Teresa pricier than it used to be.",
+         rough_cost=cost(520, 1190, 1020)),
+    dict(name="Caribbean Costa Rica + Bocas del Toro", countries=["Costa Rica", "Panama"], lat=9.3403, lon=-82.2420,
+         why="Reggae-slow Puerto Viejo, then a short border hop to Panama's stilt-house islands and calm bays.",
          weather_summary="Avg high 29°C / low 24°C, 8 of 15 days with rain, ~5 h sunshine/day",
-         est_flight_hours=9.0, tradeoffs="December is wet on the Caribbean side; Bocas Town has a party strip."),
-    dict(name="Siargao", country="Philippines", lat=9.8482, lon=126.0458,
+         est_flight_hours=7.5, tradeoffs="December is wet on the Caribbean side; Bocas Town has a party strip.",
+         rough_cost=cost(610, 900, 840, 120)),
+    dict(name="Siargao", countries=["Philippines"], lat=9.8482, lon=126.0458,
          why="Palm-jungle island with a soft surf scene and incredible island-hopping.",
          weather_summary="Avg high 29°C / low 24°C, 11 of 15 days with rain, ~4 h sunshine/day",
-         est_flight_hours=22.0, tradeoffs="Peak rainy season in December and ~2 days lost to travel each way."),
+         est_flight_hours=22.0, tradeoffs="Peak rainy season in December and ~2 days lost to travel each way.",
+         rough_cost=cost(1650, 700, 650)),
 ]
+NICOYA, CARIB, SIARGAO = (o["name"] for o in OPTS)
 
 VERDICT = dict(scores=[
-    dict(name="Nicoya Peninsula", vibe_fit=9, weather=9, budget_fit=8, ease=8, total=34),
-    dict(name="Bocas del Toro", vibe_fit=8, weather=6, budget_fit=9, ease=7, total=30),
-    dict(name="Siargao", vibe_fit=10, weather=5, budget_fit=6, ease=4, total=25),
-], pick="Nicoya Peninsula", reasoning=(
+    dict(name=NICOYA, vibe_fit=9, weather=9, budget_fit=8, ease=8, total=34),
+    dict(name=CARIB, vibe_fit=8, weather=6, budget_fit=9, ease=7, total=30),
+    dict(name=SIARGAO, vibe_fit=10, weather=5, budget_fit=6, ease=4, total=25),
+], pick=NICOYA, reasoning=(
     "Nicoya wins on what matters most for a burnt-out traveler in December: dry-season sun, beginner surf, and a "
-    "6.5 h flight. Siargao is the dreamiest vibe but rain and a 22 h journey would eat the trip; Bocas is cheapest "
-    "but wet this time of year."))
+    "6.5 h flight. Siargao is the dreamiest vibe but rain and a 22 h journey would eat the trip; the Caribbean "
+    "combo is cheapest but wet this time of year."),
+    pitches=[dict(name=NICOYA, pitch="Dry-season sun, soft beginner waves and three sleepy surf towns down one coast."),
+             dict(name=CARIB, pitch="Two countries, one slow rhythm: Caribbean food, calm bays and island hammocks."),
+             dict(name=SIARGAO, pitch="A palm-jungle island with a gentle surf scene, if you don't mind some rain.")],
+    ranking=[NICOYA, CARIB, SIARGAO])
 
 NOS, ST, SAM = (9.9781, -85.6528), (9.6464, -85.1686), (9.8800, -85.5280)
 
 
 def day(n, d, base, ll, title, m, a, e, pace):
-    return dict(day=n, date=f"2026-12-{d:02d}", base=base, lat=ll[0], lon=ll[1], title=title,
+    return dict(day=n, date=f"2026-12-{d:02d}", base=base, country="Costa Rica", lat=ll[0], lon=ll[1], title=title,
                 morning=m, afternoon=a, evening=e, pace=pace)
 
 
@@ -121,10 +145,11 @@ ITIN = lambda days: dict(headline="Two slow weeks of sun, gentle waves and gallo
                                                  "Kayaking to Isla Chora", "Zero party towns"])
 
 LOG = dict(flights=dict(route="BOS → LIR (1 stop via MIA/ATL) round trip", est_round_trip_usd=520,
+                        depart_airport="BOS", arrive_airport="LIR", return_from_airport="LIR",
                         notes="Estimate for early December; book ~6 weeks out. LIR is much closer than SJO."),
-           stays=[dict(base="Nosara", nights=4, kind="Jungle cabina 5 min from Guiones", est_per_night_usd=85),
-                  dict(base="Santa Teresa", nights=6, kind="Surf-hostel private room with pool", est_per_night_usd=95),
-                  dict(base="Sámara", nights=4, kind="Beachfront guesthouse", est_per_night_usd=70)],
+           stays=[dict(base="Nosara", country="Costa Rica", nights=4, kind="Jungle cabina 5 min from Guiones", est_per_night_usd=85),
+                  dict(base="Santa Teresa", country="Costa Rica", nights=6, kind="Surf-hostel private room with pool", est_per_night_usd=95),
+                  dict(base="Sámara", country="Costa Rica", nights=4, kind="Beachfront guesthouse", est_per_night_usd=70)],
            getting_around="Shared and private shuttles between towns (no car needed); bikes and walking within each town.",
            packing=["Reef-safe sunscreen", "Rash guard", "Light rain shell", "Headlamp", "Dry bag",
                     "Sandals + one pair of trainers", "Insect repellent", "USD cash for shuttles"])
@@ -144,15 +169,18 @@ REVIEW_2 = dict(approved=True, issues=[], summary=(
     "Day 5 is now a realistic travel day."))
 
 SCRIPTS = {
-    "brief": [[text("Burnt out + tropical + learn to surf: I'll assume solo, mid-range."), tool_use("submit", BRIEF)]],
+    "brief": [
+        [text("Lots of feeling, few facts: I'll ask the essentials."), tool_use("submit", QUESTIONS)],
+        [tool_use("submit", DECISION)],
+    ],
     "scout": [
-        [text("Thinking Pacific Costa Rica, Caribbean Panama and Siargao. Checking each one."),
+        [text("Thinking Pacific Costa Rica, a Caribbean two-country combo and Siargao. Checking each one."),
          tool_use("geocode", {"place": "Nosara"}), tool_use("geocode", {"place": "Bocas del Toro"}),
          tool_use("geocode", {"place": "Siargao"})],
         [tool_use("climate_for_window", {"lat": 9.9781, "lon": -85.6528, "start_date": "2026-12-01", "end_date": "2026-12-15"}),
          tool_use("climate_for_window", {"lat": 9.3403, "lon": -82.2420, "start_date": "2026-12-01", "end_date": "2026-12-15"}),
          tool_use("climate_for_window", {"lat": 9.8482, "lon": 126.0458, "start_date": "2026-12-01", "end_date": "2026-12-15"})],
-        [text("December is dry season in Nicoya but wet in Bocas and Siargao. That changes things."),
+        [text("December is dry season in Nicoya but wet on the Caribbean and in Siargao."),
          tool_use("submit", {"options": OPTS})],
     ],
     "judge": [[tool_use("submit", VERDICT)]],
@@ -167,7 +195,7 @@ SCRIPTS = {
         # revision round
         [text("Good catch, turning day 5 into a slow travel day."), tool_use("submit", ITIN(DAYS_V2))],
     ],
-    "logistics": [[tool_use("submit", LOG)]],
+    "logistics": [[tool_use("submit", LOG)], [tool_use("submit", LOG)]],
     "budget": [[tool_use("submit", BUDGET)], [tool_use("submit", BUDGET)]],
     "reviewer": [[tool_use("submit", REVIEW_1)], [tool_use("submit", REVIEW_2)]],
 }
@@ -192,7 +220,7 @@ class FakeMessages:
         self.cursors = {k: iter(v) for k, v in SCRIPTS.items()}
 
     async def create(self, *, system, **_):
-        name = next(a.name for a in crew.CREW if a.system == system)
+        name = next(a.name for a in crew.ALL_AGENTS if a.system == system)
         await asyncio.sleep({"brief": 1.2, "judge": 1.5, "itinerary": 2.2, "logistics": 2.6}.get(name, 1.4))
         return resp(*next(self.cursors[name]))
 
@@ -203,24 +231,67 @@ async def fake_run_tool(name, args):
     return TOOL_RESULTS[key]
 
 
+class Recorder:
+    """Writes events to a demo recording with `_delay` timing, and keeps them for assertions."""
+
+    def __init__(self, name: str):
+        self.path = ROOT / "demo" / name
+        self.events: list[dict] = []
+        self._last = time.monotonic()
+
+    async def emit(self, ev: dict) -> None:
+        now = time.monotonic()
+        self.events.append(json.loads(json.dumps({**ev, "_delay": round(now - self._last, 2)}, default=str)))
+        self._last = now
+
+    def save(self) -> None:
+        self.path.write_text("".join(json.dumps(e) + "\n" for e in self.events))
+
+    def of(self, kind: str) -> list[dict]:
+        return [e for e in self.events if e["type"] == kind]
+
+
 async def main():
     agent_mod._client = NS(messages=FakeMessages())
     agent_mod.run_tool = fake_run_tool
-    out = (ROOT / "demo" / "sample_run.jsonl").open("w")
-    last = time.monotonic()
 
-    async def emit(ev):
-        nonlocal last
-        now = time.monotonic()
-        out.write(json.dumps({**ev, "_delay": round(now - last, 2)}, default=str) + "\n")
-        last = now
+    # Run 1: vague first message -> follow-up questions.
+    turns = [ChatTurn(role="user", text=PROMPT)]
+    rec_q = Recorder("questions_run.jsonl")
+    ev = await pipeline.plan_options(turns, rec_q.emit)
+    assert ev["type"] == "questions" and ev["questions"]
 
-    trip = await crew.plan_trip(PROMPT, emit)
-    out.close()
-    assert trip.review.approved and trip.itinerary.days[4].pace == "slow"
-    assert sum(s.nights for s in trip.logistics.stays) == trip.brief.nights
-    assert sum(l.usd for l in trip.budget.lines) == trip.budget.total_usd
-    print("demo recorded:", trip.destination.name, len(trip.itinerary.days), "days")
+    # Run 2: answer -> brief decided -> 3 ranked options.
+    turns += [ChatTurn(role="assistant", text="\n".join([ev["reply"], *ev["questions"]])),
+              ChatTurn(role="user", text=ANSWER)]
+    rec_o = Recorder("options_run.jsonl")
+    ev = await pipeline.plan_options(turns, rec_o.emit)
+    assert ev["type"] == "options" and len(ev["options"]) == 3
+    assert ev["options"][0]["best"] and ev["options"][0]["option"]["name"] == NICOYA
+    assert sum(o["best"] for o in ev["options"]) == 1
+    for o in ev["options"]:
+        rc = o["option"]["rough_cost"]
+        assert rc["total_usd"] == rc["flights_usd"] + rc["lodging_usd"] + rc["daily_spend_usd"] + rc["transfers_usd"]
+    assert any(len(o["option"]["countries"]) == 2 for o in ev["options"])
+
+    # Run 3: plan the best option.
+    brief, option = TripBrief.model_validate(ev["brief"]), DestinationOption.model_validate(ev["options"][0]["option"])
+    rec_p = Recorder("plan_run.jsonl")
+    plan = await pipeline.plan_trip(brief, option, rec_p.emit)
+    assert plan.review.approved and plan.itinerary.days[4].pace == "slow"
+    assert sum(1 for e in rec_p.of("agent_start") if e["agent"] == "logistics") == 2
+    assert stay_mismatches(plan.itinerary, plan.logistics, brief.nights) == []
+    assert sum(s.nights for s in plan.logistics.stays) == brief.nights
+    assert sum(line.usd for line in plan.budget.lines) == plan.budget.total_usd
+    links = [plan.links.flights, *(s.url for s in plan.links.stays)]
+    assert all(u.startswith("https://") for u in links)
+    stays = " ".join(s.url for s in plan.links.stays)
+    assert all(part in stays for part in ("Nosara", "Santa+Teresa", "S%C3%A1mara"))
+
+    for rec in (rec_q, rec_o, rec_p):
+        assert rec.events[0]["type"] == "run_start" and not rec.of("final")
+        rec.save()
+    print("demo recorded: questions → 3 options →", plan.option_name, len(plan.itinerary.days), "days")
 
 
 if __name__ == "__main__":
