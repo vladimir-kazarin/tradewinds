@@ -3,502 +3,68 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Tradewinds</title>
-<meta name="description" content="Backpacker trip planner: tell it where you'd like to go and get three best-value trips." />
+<title>Tradewinds · best-value backpacker trips</title>
+<meta name="description" content="Tell Tradewinds where you'd like to go and a crew of AI backpackers finds three best-value trips: cheap beds, buses, street food and real adventures." />
+<meta property="og:title" content="Tradewinds · best-value backpacker trips" />
+<meta property="og:description" content="Three budget trips, planned by a crew of AI backpackers." />
+<meta name="theme-color" content="#2f5d50" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%232f5d50'/%3E%3Cpath d='M16 5l4 11-4 11-4-11z' fill='%23f3ead8'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23d4673f'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="/static/vendor/leaflet.css" />
-<style>
-@font-face { font-family: "Fraunces"; src: url(/static/vendor/fraunces-latin-opsz-normal.woff2) format("woff2"); font-weight: 100 900; }
-@font-face { font-family: "Fraunces"; font-style: italic; src: url(/static/vendor/fraunces-latin-opsz-italic.woff2) format("woff2"); font-weight: 100 900; }
-@font-face { font-family: "Manrope"; src: url(/static/vendor/manrope-latin-wght-normal.woff2) format("woff2"); font-weight: 200 800; }
-
-:root {
-  --sand: #f5eee3; --sand-2: #ece2d3; --paper: #fffaf3; --ink: #1d2a29; --muted: #6b7a76;
-  --lagoon: #0e5a52; --lagoon-2: #157a6e; --sea: #cfe6e0; --coral: #f0704f; --sun: #f2b84b;
-  --line: #e1d6c5; --radius: 18px;
-  --shadow: 0 1px 0 rgba(29,42,41,.04), 0 10px 30px -18px rgba(29,42,41,.35);
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; color: var(--ink); font: 15px/1.5 "Manrope", system-ui, sans-serif; min-height: 100%; }
-body { background:
-    radial-gradient(1200px 600px at 85% -10%, #fbd9a8 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, #bfe2d8 0%, transparent 60%), var(--sand);
-  background-attachment: fixed; }
-button, input { font: inherit; color: inherit; }
-a { color: var(--lagoon); }
-.serif { font-family: "Fraunces", Georgia, serif; font-optical-sizing: auto; font-weight: 400; }
-.muted { color: var(--muted); }
-[hidden] { display: none !important; }
-
-/* ---------- top bar ---------- */
-.top { position: absolute; inset: 0 0 auto 0; display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 20px; z-index: 5; pointer-events: none; }
-.top > * { pointer-events: auto; }
-.brand { font-family: "Fraunces", serif; font-size: 20px; color: var(--lagoon); text-decoration: none; }
-.link-btn { background: none; border: 0; color: var(--lagoon); font-weight: 700; cursor: pointer; padding: 6px 8px; }
-
-/* ---------- ask ---------- */
-.view { min-height: 100vh; padding: 80px 16px 48px; }
-.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.ask-title { font-size: clamp(32px, 6vw, 54px); margin: 0 0 10px; letter-spacing: -.01em; }
-.ask-sub { margin: 0 0 26px; max-width: 460px; }
-.composer { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 22px;
-  width: min(560px, 100%); display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
-.composer input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 17px; padding: 10px 0; min-width: 0; }
-.send { background: var(--lagoon); color: #fff; border: 0; border-radius: 999px; width: 44px; height: 44px; flex: none;
-  display: grid; place-items: center; font-size: 18px; cursor: pointer; }
-.send:disabled { opacity: .4; cursor: default; }
-
-/* ---------- chat ---------- */
-.chat-wrap { width: min(620px, 100%); margin: 0 auto; display: flex; flex-direction: column; min-height: calc(100vh - 128px); }
-.thread { flex: 1; display: flex; flex-direction: column; gap: 8px; padding-bottom: 18px; }
-.bubble { max-width: 84%; padding: 11px 15px; border-radius: 18px; white-space: pre-wrap; text-align: left; }
-.bubble.me { background: var(--lagoon); color: #fff; margin-left: auto; border-bottom-right-radius: 5px; }
-.bubble.them { background: var(--paper); border: 1px solid var(--line); border-bottom-left-radius: 5px; white-space: normal; }
-.bubble.them ul { margin: 6px 0 0; padding-left: 18px; }
-.bubble.typing { color: var(--muted); font-style: italic; }
-.bubble .retry { margin-top: 8px; }
-.chat-wrap .composer { position: sticky; bottom: 16px; }
-
-/* ---------- working: globe + crew ring ---------- */
-.working { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 16px; background: rgba(245,238,227,.94); backdrop-filter: blur(4px); text-align: center; }
-.ring { position: relative; width: min(340px, 82vw); aspect-ratio: 1; }
-.ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring .track { fill: none; stroke: var(--line); stroke-width: .8; stroke-dasharray: 1.6 2; }
-.ring .arc { fill: none; stroke: var(--lagoon); stroke-width: 1.1; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
-.globe { position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; overflow: hidden;
-  background: radial-gradient(circle at 35% 30%, #d9efe9 0%, #8cc7ba 45%, #2d7f73 100%);
-  box-shadow: inset -18px -14px 40px rgba(14,90,82,.45), 0 20px 40px -20px rgba(14,90,82,.6); }
-.globe::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
-  background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255,250,243,.35) 22px 23px),
-    radial-gradient(ellipse 30px 18px at 20% 40%, #f2d7a6 60%, transparent 62%),
-    radial-gradient(ellipse 24px 30px at 65% 60%, #f2d7a6 60%, transparent 62%),
-    radial-gradient(ellipse 18px 12px at 85% 25%, #f2d7a6 60%, transparent 62%);
-  background-size: 300px 100%, 300px 100%, 300px 100%, 300px 100%; animation: spin 6s linear infinite; }
-@keyframes spin { from { background-position: 0 0, 0 0, 0 0, 0 0; } to { background-position: 300px 0, 300px 0, 300px 0, 300px 0; } }
-.node { position: absolute; width: 15%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: var(--paper);
-  border: 1.5px solid var(--line); display: grid; place-items: center; font-size: clamp(14px, 4.4vw, 20px); transition: all .3s ease; }
-.node small { position: absolute; top: 104%; font-size: 11px; white-space: nowrap; color: var(--muted); }
-.node.now { border-color: var(--coral); box-shadow: 0 0 0 6px rgba(240,112,79,.16); }
-.node.done { border-color: var(--lagoon); background: #e6f3ef; }
-.node.done small { color: var(--lagoon); }
-.status { margin-top: 38px; color: var(--muted); font-style: italic; min-height: 1.5em; max-width: 420px; }
-@media (prefers-reduced-motion: reduce) { .globe::before { animation: none; } .ring .arc, .node { transition: none; } }
-
-/* ---------- results ---------- */
-.results-wrap { width: min(1080px, 100%); margin: 0 auto; }
-.reply { font-size: clamp(26px, 4vw, 36px); margin: 4px 0 4px; }
-.summary { margin: 0 0 22px; font-size: 16px; }
-.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-@media (max-width: 899px) { .cards { grid-template-columns: 1fr; } }
-.card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
-  display: flex; flex-direction: column; transition: box-shadow .2s, border-color .2s; }
-.card.selected { border-color: var(--lagoon); box-shadow: 0 0 0 2px var(--lagoon), var(--shadow); }
-.card .hero { min-height: 104px; padding: 14px 16px; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; }
-.hero.g0 { background: linear-gradient(135deg, #157a6e, #0e5a52); }
-.hero.g1 { background: linear-gradient(135deg, #f0a35b, #d76a4a); }
-.hero.g2 { background: linear-gradient(135deg, #5b8fb0, #2f5d7c); }
-.badge { align-self: flex-start; background: var(--sun); color: var(--ink); font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px; margin-bottom: 6px; }
-.card .name { font-size: 21px; line-height: 1.15; }
-.card .where { font-size: 12px; opacity: .9; }
-.card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-.card .pitch { margin: 0; }
-.price { font-size: 26px; }
-.price-note { font-size: 12px; }
-.btn { display: inline-flex; justify-content: center; align-items: center; gap: 6px; border-radius: 999px; padding: 10px 16px;
-  font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; border: 1px solid var(--lagoon); }
-.btn.primary { background: var(--lagoon); color: #fff; }
-.btn.secondary { background: transparent; color: var(--lagoon); }
-.btn:disabled { opacity: .45; cursor: default; }
-.card .btn { margin-top: auto; }
-.banner { background: #fde7df; border: 1px solid #f3b9a6; border-radius: 12px; padding: 10px 14px; margin: 0 0 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-
-/* ---------- plan detail ---------- */
-.plan { margin-top: 26px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
-.plan h2 { font-size: clamp(22px, 3.4vw, 30px); margin: 0 0 8px; line-height: 1.2; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
-.chip { background: var(--sea); color: var(--lagoon); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
-.plan-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; }
-@media (max-width: 899px) { .plan-grid { grid-template-columns: 1fr; } }
-.plan h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .12em; color: var(--lagoon); margin: 0 0 10px; }
-.day { border-bottom: 1px dashed var(--line); }
-.day summary { cursor: pointer; padding: 9px 0; list-style: none; display: flex; gap: 10px; align-items: baseline; }
-.day summary::-webkit-details-marker { display: none; }
-.day .dn { font-weight: 800; color: var(--lagoon); min-width: 46px; font-size: 13px; }
-.day .dt { flex: 1; }
-.day .dt small { display: block; color: var(--muted); font-size: 12px; }
-.day .parts { padding: 0 0 12px 56px; font-size: 14px; }
-.day .parts b { color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
-.map { height: 280px; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 20px; }
-.pin { width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--coral); border: 3px solid #fff;
-  box-shadow: 0 6px 14px rgba(0,0,0,.25); display: grid; place-items: center; }
-.pin span { transform: rotate(45deg); color: #fff; font-weight: 800; font-size: 12px; }
-.budget { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 14px; }
-.budget td { padding: 6px 0; border-bottom: 1px dashed var(--line); }
-.budget td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-.budget tr.total td { font-weight: 800; border-bottom: 0; font-size: 16px; }
-.book { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
-.note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
-.tips { margin: 0; padding-left: 18px; font-size: 14px; }
-.tips li { margin: 4px 0; }
-</style>
+<link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
-<div class="top">
-  <a class="brand" href="/" aria-label="Tradewinds home">Tradewinds</a>
-  <button class="link-btn" id="restart" hidden>Start over</button>
-</div>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Tradewinds home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#2f5d50"/><path d="M16 5l4 11-4 11-4-11z" fill="#f3ead8"/><circle cx="16" cy="16" r="2.5" fill="#d4673f"/></svg>
+    <span><b>Tradewinds</b><small>best-value backpacker trips</small></span>
+  </a>
+  <div class="top-actions"><button class="btn ghost small" id="restart" hidden>New trip</button></div>
+</header>
 
 <main>
-  <section class="view center" id="v-ask">
-    <h1 class="serif ask-title">Where would you like to go?</h1>
-    <p class="muted ask-sub">Best-value trips for backpackers: cheap beds, buses, street food, real adventures.</p>
+  <section class="landing" id="v-landing">
+    <div class="label">A crew of AI backpackers</div>
+    <h1>Where to, on a <em>shoestring</em>?</h1>
+    <p class="lede">Tell me what you're after. I'll ask a couple of questions, then find three best-value trips: cheap beds, buses, street food and real adventures. Never over your budget.</p>
     <form class="composer" id="ask-form">
       <input id="ask-input" maxlength="1000" autocomplete="off" placeholder="Somewhere warm and cheap in December, about $1,500…" aria-label="Describe your trip" />
       <button class="send" aria-label="Send">→</button>
     </form>
+    <div class="examples" id="examples">
+      <button class="chip" type="button">🌴 3 weeks in Southeast Asia on $1,700</button>
+      <button class="chip" type="button">🏔️ Hiking in the Andes for two weeks</button>
+      <button class="chip" type="button">🚆 Europe overland, no flights, €700</button>
+      <button class="chip" type="button">🏄 Learn to surf somewhere cheap</button>
+    </div>
+    <div class="how">
+      <div class="step"><span class="label">1 · Chat</span><b>Say it your way</b><p>Dates, budget and vibe. I'll only ask what I need.</p></div>
+      <div class="step"><span class="label">2 · Compare</span><b>Three best-value trips</b><p>Each with a rough all-in price and a per-day cost.</p></div>
+      <div class="step"><span class="label">3 · Plan</span><b>Day by day, then book</b><p>Itinerary, map, hostels, buses, budget and saving tips.</p></div>
+    </div>
   </section>
 
-  <section class="view" id="v-chat" hidden>
-    <div class="chat-wrap">
+  <div class="tabs" id="tabs" hidden role="tablist">
+    <button role="tab" data-tab="chat" aria-selected="true">Chat</button>
+    <button role="tab" data-tab="trips" aria-selected="false">Trips<span class="dot" id="trips-dot" hidden></span></button>
+  </div>
+  <section class="shell" id="v-app" data-tab="chat" hidden>
+    <div class="pane chat">
       <div class="thread" id="thread" aria-live="polite"></div>
       <form class="composer" id="chat-form">
-        <input id="chat-input" maxlength="1000" autocomplete="off" placeholder="Type your answer…" aria-label="Your answer" />
+        <input id="chat-input" maxlength="500" autocomplete="off" placeholder="Type your answer…" aria-label="Your message" />
         <button class="send" aria-label="Send">→</button>
       </form>
     </div>
-  </section>
-
-  <section class="view" id="v-results" hidden>
-    <div class="results-wrap">
-      <div id="results-banner"></div>
-      <h1 class="serif reply">Three best-value trips for you</h1>
-      <p class="muted summary" id="reply"></p>
-      <div class="cards" id="cards"></div>
-      <div id="plan"></div>
-    </div>
+    <div class="pane canvas" id="canvas"></div>
   </section>
 </main>
 
-<div class="working" id="working" hidden aria-live="polite">
-  <div class="ring" id="ring"></div>
-  <div class="status" id="status"></div>
-</div>
+<footer class="footer" id="footer">
+  Prices are estimates from AI agents. Check before you book. Flights and stays open as searches on Google Flights and Booking.com.<br>
+  Your messages are processed by Anthropic's Claude and may be logged to improve Tradewinds. Don't share personal details.
+</footer>
 
 <script src="/static/vendor/leaflet.js"></script>
-<script>
-"use strict";
-const $ = sel => document.querySelector(sel);
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money = n => "$" + Number(n || 0).toLocaleString("en-US");
-const shortDate = iso => new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
-const perDay = (total, nights) => nights > 0 ? `~${money(Math.round(total / nights))} a day` : "";
-const safeUrl = u => /^https:\/\//.test(String(u)) ? String(u) : "#";
-const QS = new URLSearchParams(location.search).get("demo") ? "?demo=1" : "";
-const CREW = { brief: ["📝", "Brief"], scout: ["🧭", "Scout"], judge: ["⚖️", "Judge"], itinerary: ["🗺️", "Itinerary"],
-               logistics: ["✈️", "Logistics"], budget: ["💵", "Budget"], reviewer: ["🔍", "Reviewer"] };
-const FALLBACK_ERROR = "Something went wrong. Please try again.";
-const TERMINAL = new Set(["questions", "options", "plan", "error"]);
-
-// ---------- state (replaced, never mutated) ----------
-const newSessionId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2));
-const INITIAL = Object.freeze({ session: "", turns: [], brief: null, reply: "", options: [], plans: {}, selected: null,
-                                busy: false, chatError: false, planError: null });
-let state = INITIAL;
-let controller = null;
-let map = null;
-const setState = patch => { state = Object.freeze({ ...state, ...patch }); };
-
-// ---------- SSE over fetch (EventSource can't POST) ----------
-async function streamSSE(url, body, onEvent, signal) {
-  let resp;
-  try {
-    resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
-  } catch (e) {
-    if (e.name !== "AbortError") onEvent({ type: "error", message: FALLBACK_ERROR });
-    return;
-  }
-  if (!resp.ok || !resp.body) {
-    // 429 / 503 carry a traveler-facing reason (rate limit, daily cap, busy).
-    let message = FALLBACK_ERROR;
-    try { const j = await resp.json(); if (typeof j.detail === "string") message = j.detail; } catch (_) { /* not JSON */ }
-    onEvent({ type: "error", message });
-    return;
-  }
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  let finished = false;
-  const deliver = ev => { if (TERMINAL.has(ev.type)) finished = true; onEvent(ev); };
-  try {
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true }).replace(/\r\n?/g, "\n");
-      let cut;
-      while ((cut = buf.indexOf("\n\n")) >= 0) {
-        const block = buf.slice(0, cut);
-        buf = buf.slice(cut + 2);
-        const data = block.split("\n").filter(l => l.startsWith("data:")).map(l => l.slice(5).trimStart()).join("\n");
-        if (data) deliver(JSON.parse(data));
-      }
-    }
-  } catch (e) {
-    if (e.name === "AbortError") return;
-  }
-  // A stream that closes without a result (proxy timeout, server crash) must not leave the page spinning.
-  if (!finished && !(signal && signal.aborted)) onEvent({ type: "error", message: FALLBACK_ERROR });
-}
-
-// ---------- views ----------
-function showView(name) {
-  for (const v of ["ask", "chat", "results"]) $(`#v-${v}`).hidden = v !== name;
-  $("#restart").hidden = name === "ask";
-}
-const showWorking = on => { $("#working").hidden = !on; };
-
-// ---------- ring ----------
-function renderRing(agents) {
-  const n = agents.length;
-  const nodes = agents.map((a, i) => {
-    const ang = (-90 + i * 360 / n) * Math.PI / 180;
-    const [icon, label] = CREW[a.name] || ["•", a.role];
-    return `<div class="node" data-agent="${esc(a.name)}" style="left:${50 + 42 * Math.cos(ang)}%;top:${50 + 42 * Math.sin(ang)}%">
-      <span aria-hidden="true">${icon}</span><small>${esc(label)}</small></div>`;
-  }).join("");
-  $("#ring").innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">
-      <circle class="track" cx="50" cy="50" r="42"/>
-      <circle class="arc" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="0 100"/></svg>
-    <div class="globe" aria-hidden="true"></div>${nodes}`;
-  setStatus("");
-}
-function setNode(name, cls) {
-  const el = $(`#ring .node[data-agent="${CSS.escape(name)}"]`);
-  if (!el) return;
-  el.classList.remove("now", "done");
-  if (cls !== "idle") el.classList.add(cls);
-  const nodes = document.querySelectorAll("#ring .node");
-  const done = document.querySelectorAll("#ring .node.done").length;
-  $("#ring .arc").setAttribute("stroke-dasharray", `${100 * done / nodes.length} 100`);
-}
-const setStatus = text => { $("#status").textContent = text; };
-
-// Shared crew-progress events for both steps; returns true if handled.
-function crewEvent(ev) {
-  switch (ev.type) {
-    case "run_start": renderRing(ev.agents); return true;
-    case "agent_start": setNode(ev.agent, "now"); return true;
-    case "agent_done": case "agent_skip": setNode(ev.agent, "done"); return true;
-    case "status": setStatus(ev.text); return true;
-    default: return false;  // thought, tool_call, tool_result, revision, agent_error: not for travelers
-  }
-}
-
-// ---------- chat ----------
-function renderThread(typing) {
-  const bubbles = state.turns.map(t => t.role === "user"
-    ? `<div class="bubble me">${esc(t.text)}</div>`
-    : `<div class="bubble them">${t.html}</div>`);
-  if (typing) bubbles.push(`<div class="bubble them typing">${esc(typing)}</div>`);
-  if (state.chatError) bubbles.push(`<div class="bubble them">${esc(state.chatError)}<div class="retry">
-      <button class="btn secondary" id="retry-chat">Try again</button></div></div>`);
-  $("#thread").innerHTML = bubbles.join("");
-  const retry = $("#retry-chat");
-  if (retry) retry.onclick = () => runOptions();
-  $("#chat-input").disabled = state.busy;
-  $("#chat-form .send").disabled = state.busy;
-  if (!state.busy) $("#chat-input").focus();
-  window.scrollTo(0, document.body.scrollHeight);
-}
-
-function send(text) {
-  const clean = text.trim();
-  if (!clean || state.busy) return;
-  setState({ session: state.session || newSessionId(), turns: [...state.turns, { role: "user", text: clean }] });
-  showView("chat");
-  runOptions();
-}
-
-function runOptions() {
-  controller = new AbortController();
-  setState({ busy: true, chatError: false });
-  renderThread("Reading your trip…");
-  const messages = state.turns.map(t => ({ role: t.role, text: t.text }));
-  streamSSE("/api/options" + QS, { messages, session_id: state.session }, onOptionsEvent, controller.signal);
-}
-
-function onOptionsEvent(ev) {
-  if (ev.type === "agent_start" && ev.agent === "scout") showWorking(true);
-  if (crewEvent(ev)) return;
-  switch (ev.type) {
-    case "questions": {
-      const html = `${esc(ev.reply)}<ul>${ev.questions.map(q => `<li>${esc(q)}</li>`).join("")}</ul>`;
-      const text = [ev.reply, ...ev.questions].join("\n");
-      setState({ busy: false, turns: [...state.turns, { role: "assistant", text, html }] });
-      renderThread();
-      break;
-    }
-    case "options":
-      setState({ busy: false, brief: ev.brief, reply: ev.reply, options: ev.options, plans: {}, selected: null });
-      showWorking(false);
-      renderResults();
-      showView("results");
-      window.scrollTo(0, 0);
-      break;
-    case "error":
-      setState({ busy: false, chatError: ev.message || FALLBACK_ERROR });
-      showWorking(false);
-      renderThread();
-      break;
-  }
-}
-
-// ---------- results ----------
-function renderResults() {
-  $("#reply").textContent = state.reply;
-  const nights = state.brief ? state.brief.nights : 0;
-  $("#cards").innerHTML = state.options.map((r, i) => {
-    const o = r.option;
-    const planned = Boolean(state.plans[i]);
-    const label = planned ? (state.selected === i ? "Your plan is below" : "See this plan") : "Plan this trip";
-    return `<article class="card${state.selected === i ? " selected" : ""}">
-      <div class="hero g${i % 3}">
-        ${r.best ? `<span class="badge">Best value</span>` : ""}
-        <span class="serif name">${esc(o.name)}</span>
-        <span class="where">${o.countries.map(esc).join(" · ")} · ${nights} nights</span>
-      </div>
-      <div class="body">
-        <p class="pitch">${esc(r.pitch)}</p>
-        <div><span class="serif price">about ${money(o.rough_cost.total_usd)}</span>
-          <div class="muted price-note">${perDay(o.rough_cost.total_usd, nights)} · estimate, flights included</div></div>
-        <button class="btn ${planned ? "secondary" : "primary"}" data-plan="${i}" ${state.busy ? "disabled" : ""}>${label}</button>
-      </div></article>`;
-  }).join("");
-  document.querySelectorAll("[data-plan]").forEach(b => b.onclick = () => planCard(Number(b.dataset.plan)));
-  renderBanner();
-}
-
-function renderBanner() {
-  const err = state.planError;
-  $("#results-banner").innerHTML = err === null ? "" : `<div class="banner"><span>${esc(err.message)}</span>
-    <button class="btn secondary" id="retry-plan">Try again</button></div>`;
-  const retry = $("#retry-plan");
-  if (retry) retry.onclick = () => planCard(err.index);
-}
-
-function planCard(i) {
-  if (state.plans[i]) { setState({ selected: i }); renderResults(); renderPlan(i); scrollToPlan(); return; }
-  if (state.busy) return;
-  controller = new AbortController();
-  planNote = "";
-  planStarted = false;
-  setState({ busy: true, planError: null });
-  renderResults();
-  showWorking(true);
-  const body = { brief: state.brief, option: state.options[i].option, session_id: state.session };
-  streamSSE("/api/plan" + QS, body, ev => onPlanEvent(i, ev), controller.signal);
-}
-
-// A status before run_start is a note about the whole plan (e.g. demo mode), kept with it.
-let planNote = "";
-let planStarted = false;
-
-function onPlanEvent(i, ev) {
-  if (ev.type === "status" && !planStarted) planNote = ev.text;
-  if (ev.type === "run_start") planStarted = true;
-  if (crewEvent(ev)) return;
-  if (ev.type === "plan") {
-    setState({ busy: false, plans: { ...state.plans, [i]: { ...ev, note: planNote } }, selected: i });
-    showWorking(false);
-    renderResults();
-    renderPlan(i);
-    scrollToPlan();
-  } else if (ev.type === "error") {
-    setState({ busy: false, planError: { index: i, message: ev.message || FALLBACK_ERROR } });
-    showWorking(false);
-    renderResults();
-  }
-}
-const scrollToPlan = () => $("#plan").scrollIntoView({ behavior: "smooth", block: "start" });
-
-// ---------- plan detail ----------
-function baseRuns(days) {
-  return days.reduce((runs, d) => {
-    const last = runs[runs.length - 1];
-    return last && last.base === d.base ? [...runs.slice(0, -1), { ...last, days: [...last.days, d] }]
-                                         : [...runs, { base: d.base, lat: d.lat, lon: d.lon, days: [d] }];
-  }, []);
-}
-
-function dayHTML(d) {
-  return `<details class="day"><summary><span class="dn">Day ${d.day}</span>
-      <span class="dt">${esc(d.title)}<small>${esc(shortDate(d.date))} · ${esc(d.base)}, ${esc(d.country)}</small></span></summary>
-    <div class="parts"><p><b>Morning</b><br>${esc(d.morning)}</p><p><b>Afternoon</b><br>${esc(d.afternoon)}</p>
-      <p><b>Evening</b><br>${esc(d.evening)}</p></div></details>`;
-}
-
-function renderPlan(i) {
-  const p = state.plans[i];
-  const it = p.itinerary, lg = p.logistics, bd = p.budget;
-  const transfers = lg.transfers.length ? `<h3>Between countries</h3><p class="note">${lg.transfers.map(t =>
-      `${esc(t.from_base)} → ${esc(t.to_base)} by ${esc(t.mode)} (about ${money(t.est_usd)})`).join("<br>")}</p>` : "";
-  $("#plan").innerHTML = `<section class="plan" aria-label="Trip plan">
-    ${p.note ? `<div class="banner">${esc(p.note)}</div>` : ""}
-    <h2 class="serif">${esc(it.headline)}</h2>
-    <div class="chips">${it.highlights.map(h => `<span class="chip">${esc(h)}</span>`).join("")}</div>
-    <div class="plan-grid">
-      <div><h3>Day by day</h3>${it.days.map(dayHTML).join("")}</div>
-      <div>
-        <div class="map" id="map"></div>
-        <h3>Book it</h3>
-        <div class="book">
-          <a class="btn primary" href="${esc(safeUrl(p.links.flights))}" target="_blank" rel="noopener">✈️ Flights</a>
-          ${p.links.stays.map(s => `<a class="btn secondary" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener">Stay in ${esc(s.base)}</a>`).join("")}
-        </div>
-        <p class="note">${esc(lg.getting_around)}</p>
-        ${transfers}
-        <h3>What it costs</h3>
-        <table class="budget">${bd.lines.map(l => `<tr><td>${esc(l.category)}</td><td>${money(l.usd)}</td></tr>`).join("")}
-          <tr class="total"><td>Total</td><td>${money(bd.total_usd)}</td></tr></table>
-        <p class="note">${bd.within_budget ? "Within your budget." : "Over your budget."} ${esc(bd.notes)}</p>
-        ${(bd.saving_tips || []).length ? `<h3>Ways to save</h3><ul class="tips">${bd.saving_tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
-      </div>
-    </div></section>`;
-  drawMap(baseRuns(it.days));
-}
-
-function drawMap(runs) {
-  if (map) { map.remove(); map = null; }
-  if (!window.L || !runs.length) return;
-  map = L.map("map", { scrollWheelZoom: false });
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors", maxZoom: 18 }).addTo(map);
-  const pts = runs.map(r => [r.lat, r.lon]);
-  L.polyline(pts, { color: "#0e5a52", weight: 3, dashArray: "6 8", opacity: .85 }).addTo(map);
-  runs.forEach((r, n) => {
-    const icon = L.divIcon({ className: "", html: `<div class="pin"><span>${n + 1}</span></div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
-    L.marker([r.lat, r.lon], { icon }).addTo(map).bindPopup(`<b>${esc(r.base)}</b><br>Days ${r.days[0].day}–${r.days[r.days.length - 1].day}`);
-  });
-  map.fitBounds(L.latLngBounds(pts).pad(0.45));
-  setTimeout(() => map && map.invalidateSize(), 60);
-}
-
-// ---------- wiring ----------
-function restart() {
-  if (controller) controller.abort();
-  if (map) { map.remove(); map = null; }
-  state = INITIAL;
-  showWorking(false);
-  $("#plan").innerHTML = "";
-  $("#ask-input").value = "";
-  showView("ask");
-  $("#ask-input").focus();
-}
-
-$("#ask-form").onsubmit = e => { e.preventDefault(); send($("#ask-input").value); };
-$("#chat-form").onsubmit = e => { e.preventDefault(); const v = $("#chat-input").value; $("#chat-input").value = ""; send(v); };
-$("#restart").onclick = restart;
-$("#ask-input").focus();
-</script>
+<script type="module" src="/static/app.js"></script>
 </body>
 </html>
