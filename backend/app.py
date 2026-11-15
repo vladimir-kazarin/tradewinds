@@ -12,7 +12,9 @@ import json
 import logging
 import os
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 from fastapi import FastAPI, Request
@@ -22,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_validator
 from sse_starlette.sse import EventSourceResponse
 
+import tracing
 from agent import Emit, Usage
 from limits import RateLimiter, RunBudgetExceeded, SpendLedger
 from pipeline import plan_options, plan_trip
@@ -43,6 +46,8 @@ BUSY_RETRY_S = 30
 HOUR_S = 3600
 LOG_ONLY = {"usage"}  # recorded for us, never sent to travelers
 MAX_TURNS = 8
+SESSION_ID = r"^[A-Za-z0-9-]{1,64}$"  # browser-generated id grouping one search's traces
+TERMINAL = {"questions", "options", "plan", "error"}
 MAX_PLAN_BODY_CHARS = 30_000  # a real brief + option is ~3k; bigger means abuse
 MIN_SPEED = 0.1
 
@@ -58,7 +63,13 @@ OPTIONS_LIMITER = RateLimiter(int(os.getenv("TRADEWINDS_OPTIONS_PER_HOUR", "20")
 PLAN_LIMITER = RateLimiter(int(os.getenv("TRADEWINDS_PLANS_PER_HOUR", "10")), HOUR_S)
 TRUST_PROXY = os.getenv("TRADEWINDS_TRUST_PROXY") == "1"  # set on Fly.io, where Fly-Client-IP is reliable
 
-app = FastAPI(title="Tradewinds")
+@asynccontextmanager
+async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    yield
+    tracing.flush()  # send buffered traces before the process exits
+
+
+app = FastAPI(title="Tradewinds", lifespan=_lifespan)
 _live_slots = asyncio.Semaphore(MAX_CONCURRENT)
 _inflight = 0  # running + queued live runs
 
@@ -72,6 +83,7 @@ async def _invalid_request(_: Request, exc: RequestValidationError) -> JSONRespo
 
 class OptionsRequest(BaseModel):
     messages: list[ChatTurn] = Field(min_length=1, max_length=MAX_TURNS)
+    session_id: str | None = Field(None, pattern=SESSION_ID)
 
     @model_validator(mode="after")
     def _last_from_user(self) -> OptionsRequest:
@@ -83,6 +95,7 @@ class OptionsRequest(BaseModel):
 class PlanRequest(BaseModel):
     brief: TripBrief
     option: DestinationOption
+    session_id: str | None = Field(None, pattern=SESSION_ID)
 
     @model_validator(mode="before")
     @classmethod
@@ -138,14 +151,21 @@ async def _replay(path: Path, speed: float, prelude: list[dict] | None = None) -
 Run = Callable[[Emit, Usage], Awaitable[Any]]
 
 
-async def _live(run: Run) -> AsyncIterator[dict]:
+@dataclass(frozen=True)
+class TraceInfo:
+    name: str
+    input: Any
+    session_id: str | None
+
+
+async def _live(run: Run, trace: TraceInfo) -> AsyncIterator[dict]:
     q: asyncio.Queue = asyncio.Queue()
 
     async def worker() -> None:
         global _inflight
         _inflight += 1
         try:
-            await _run_logged(run, q)
+            await _run_logged(run, q, trace)
         except Exception:  # anything outside the run itself (log file, disk): still tell the browser
             log.exception("run setup failed")
             await q.put({"type": "error", "message": FRIENDLY_ERROR})
@@ -161,7 +181,7 @@ async def _live(run: Run) -> AsyncIterator[dict]:
         task.cancel()  # client disconnected: stop spending tokens
 
 
-async def _run_logged(run: Run, q: asyncio.Queue) -> None:
+async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo) -> None:
     async with _live_slots:
         # Opened only once a slot is free, so queued runs leave no empty files.
         with (RUNS / f"{int(time.time() * 1000)}.jsonl").open("w") as f:
@@ -173,12 +193,16 @@ async def _run_logged(run: Run, q: asyncio.Queue) -> None:
                 f.write(json.dumps({**ev, "_delay": round(now - last, 2)}, default=str) + "\n")
                 f.flush()
                 last = now
+                if ev["type"] in TERMINAL:
+                    root.update(output=ev)
                 if ev["type"] not in LOG_ONLY:
                     await q.put(ev)
 
             usage = Usage(budget_usd=RUN_BUDGET_USD, ledger=LEDGER)
             try:
-                await run(emit, usage)
+                with tracing.run_trace(trace.name, input=trace.input, session_id=trace.session_id,
+                                       metadata={"run_log": f.name.rsplit("/", 1)[-1]}) as root:
+                    await run(emit, usage)
             except RunBudgetExceeded as e:
                 f.write(json.dumps({"type": "error", "message": str(e)}) + "\n")
                 log.warning("run stopped: %s", e)
@@ -197,7 +221,8 @@ async def options(req: OptionsRequest, request: Request, demo: bool = False, spe
     refused = _guard(request, OPTIONS_LIMITER)
     if refused is not None:
         return refused
-    return EventSourceResponse(_live(lambda emit, usage: plan_options(req.messages, emit, usage)))
+    trace = TraceInfo("plan-options", {"messages": [t.model_dump() for t in req.messages]}, req.session_id)
+    return EventSourceResponse(_live(lambda emit, usage: plan_options(req.messages, emit, usage), trace))
 
 
 def _recorded_option_name() -> str | None:
@@ -216,7 +241,9 @@ async def plan(req: PlanRequest, request: Request, demo: bool = False, speed: fl
     refused = _guard(request, PLAN_LIMITER)
     if refused is not None:
         return refused
-    return EventSourceResponse(_live(lambda emit, usage: plan_trip(req.brief, req.option, emit, usage)))
+    trace = TraceInfo("plan-trip", {"brief": req.brief.model_dump(mode="json"), "option": req.option.name},
+                      req.session_id)
+    return EventSourceResponse(_live(lambda emit, usage: plan_trip(req.brief, req.option, emit, usage), trace))
 
 
 @app.get("/")

@@ -20,6 +20,7 @@ from typing import Any, Awaitable, Callable, Generic, TypeVar
 from anthropic import AsyncAnthropic, APIStatusError, APIConnectionError
 from pydantic import BaseModel, ValidationError
 
+import tracing
 from limits import RunBudgetExceeded, SpendLedger, cost_usd
 from tools import TOOL_REGISTRY, run_tool
 
@@ -80,21 +81,47 @@ class Agent(Generic[T]):
         }
 
     async def run(self, task: str, emit: Emit, usage: Usage) -> T:
+        with tracing.observation(self.name, as_type="agent", input=task,
+                                 metadata={"role": self.role, "tools": self.tools}) as span:
+            out = await self._loop(task, emit, usage)
+            span.update(output=json.loads(out.model_dump_json()))
+            return out
+
+    async def _call_model(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], turn: int,
+                          emit: Emit, usage: Usage) -> Any:
+        system = self.system + SUBMIT_RULE
+        trace_input = {"system": system, "messages": tracing.jsonable(messages)} if tracing.enabled() else None
+        with tracing.observation(f"{self.name} · turn {turn + 1}", as_type="generation", model=MODEL,
+                                 input=trace_input, model_parameters={"max_tokens": self.max_tokens}) as gen:
+            try:
+                resp = await client().messages.create(
+                    model=MODEL, max_tokens=self.max_tokens, system=system,
+                    tools=tools, tool_choice={"type": "auto"}, messages=messages,
+                )
+            except (APIStatusError, APIConnectionError) as e:
+                await emit({"type": "agent_error", "agent": self.name, "message": str(e)})
+                raise
+            u = resp.usage
+            gen.update(output=tracing.jsonable(resp.content) if tracing.enabled() else None,
+                       usage_details={"input": u.input_tokens, "output": u.output_tokens},
+                       cost_details={"total": cost_usd(usage.model, u.input_tokens, u.output_tokens)})
+            usage.add(u)  # may raise RunBudgetExceeded; the generation is still recorded
+            return resp
+
+    async def _run_tool(self, call: Any) -> dict[str, Any]:
+        with tracing.observation(call.name, as_type="tool", input=call.input) as span:
+            out = await run_tool(call.name, call.input)
+            span.update(output=out, **({"level": "WARNING"} if "error" in out else {}))
+            return out
+
+    async def _loop(self, task: str, emit: Emit, usage: Usage) -> T:
         tools = [TOOL_REGISTRY[t][1] for t in self.tools] + [self._submit_tool()]
         messages: list[dict[str, Any]] = [{"role": "user", "content": task}]
         await emit({"type": "agent_start", "agent": self.name, "role": self.role})
         t0 = time.monotonic()
 
         for turn in range(self.max_turns):
-            try:
-                resp = await client().messages.create(
-                    model=MODEL, max_tokens=self.max_tokens, system=self.system + SUBMIT_RULE,
-                    tools=tools, tool_choice={"type": "auto"}, messages=messages,
-                )
-            except (APIStatusError, APIConnectionError) as e:
-                await emit({"type": "agent_error", "agent": self.name, "message": str(e)})
-                raise
-            usage.add(resp.usage)
+            resp = await self._call_model(messages, tools, turn, emit, usage)
             messages.append({"role": "assistant", "content": resp.content})
 
             for block in resp.content:
@@ -122,7 +149,7 @@ class Agent(Generic[T]):
             real = [c for c in calls if c.name != "submit"]
             for c in real:
                 await emit({"type": "tool_call", "agent": self.name, "tool": c.name, "input": c.input})
-            outs = await asyncio.gather(*(run_tool(c.name, c.input) for c in real))
+            outs = await asyncio.gather(*(self._run_tool(c) for c in real))
             for c, o in zip(real, outs):
                 await emit({"type": "tool_result", "agent": self.name, "tool": c.name, "result": o})
                 results.append({"type": "tool_result", "tool_use_id": c.id, "content": json.dumps(o),

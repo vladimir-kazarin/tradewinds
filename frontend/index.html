@@ -195,7 +195,8 @@ const FALLBACK_ERROR = "Something went wrong. Please try again.";
 const TERMINAL = new Set(["questions", "options", "plan", "error"]);
 
 // ---------- state (replaced, never mutated) ----------
-const INITIAL = Object.freeze({ turns: [], brief: null, reply: "", options: [], plans: {}, selected: null,
+const newSessionId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2));
+const INITIAL = Object.freeze({ session: "", turns: [], brief: null, reply: "", options: [], plans: {}, selected: null,
                                 busy: false, chatError: false, planError: null });
 let state = INITIAL;
 let controller = null;
@@ -307,7 +308,7 @@ function renderThread(typing) {
 function send(text) {
   const clean = text.trim();
   if (!clean || state.busy) return;
-  setState({ turns: [...state.turns, { role: "user", text: clean }] });
+  setState({ session: state.session || newSessionId(), turns: [...state.turns, { role: "user", text: clean }] });
   showView("chat");
   runOptions();
 }
@@ -317,7 +318,7 @@ function runOptions() {
   setState({ busy: true, chatError: false });
   renderThread("Reading your trip…");
   const messages = state.turns.map(t => ({ role: t.role, text: t.text }));
-  streamSSE("/api/options" + QS, { messages }, onOptionsEvent, controller.signal);
+  streamSSE("/api/options" + QS, { messages, session_id: state.session }, onOptionsEvent, controller.signal);
 }
 
 function onOptionsEvent(ev) {
@@ -388,7 +389,7 @@ function planCard(i) {
   setState({ busy: true, planError: null });
   renderResults();
   showWorking(true);
-  const body = { brief: state.brief, option: state.options[i].option };
+  const body = { brief: state.brief, option: state.options[i].option, session_id: state.session };
   streamSSE("/api/plan" + QS, body, ev => onPlanEvent(i, ev), controller.signal);
 }
 

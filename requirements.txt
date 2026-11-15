@@ -5,3 +5,4 @@ sse-starlette>=2.0
 httpx>=0.27
 pydantic>=2.7
 mcp>=2.0
+langfuse>=5.2

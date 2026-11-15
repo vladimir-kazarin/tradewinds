@@ -189,3 +189,21 @@ def test_run_over_budget_stops_with_friendly_message(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "plan_options", fake)
     evs = _events(TestClient(app.app).post("/api/options", json=FIRST))
     assert evs == [{"type": "error", "message": app.TOO_BIG_ERROR}]
+
+
+def test_live_run_is_traced_with_session_and_output(monkeypatch, tmp_path):
+    import tracing
+    from test_tracing import Recorder
+    rec = Recorder()
+    monkeypatch.setattr(tracing, "_client", lambda: rec)
+    app = _live_app(monkeypatch, tmp_path)
+    body = {**FIRST, "session_id": "abc-123"}
+    _events(TestClient(app.app).post("/api/options", json=body))
+    root = rec.observations[0]
+    assert root["name"] == "plan-options" and root["parent"] is None
+    assert root["input"]["messages"][0]["text"] == "Somewhere warm"
+    assert root["output"]["type"] == "questions"
+
+
+def test_bad_session_id_is_422(client):
+    assert client.post("/api/options", json={**FIRST, "session_id": "<script>"}).status_code == 422
