@@ -34,7 +34,8 @@ brief_decide_agent = Agent(
         "You are a warm, efficient travel planner. You already asked the traveler your questions; now decide. "
         + _BRIEF_FIELDS +
         "Never ask anything further. Fill anything still unstated with sensible defaults and note the assumptions "
-        "in travel_style. Reply with one or two friendly sentences saying you're finding trips now."
+        "in travel_style. Reply with one friendly sentence summing up the trip you understood, e.g. "
+        "'Two slow, sunny weeks from Boston for around $3k.'"
     ),
 )
 

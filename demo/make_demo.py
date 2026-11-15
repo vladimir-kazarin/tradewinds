@@ -52,7 +52,7 @@ BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="
              must_haves=["beginner-friendly surf lessons", "good local food"], avoid=["party scene"],
              travel_style="Slow travel, 2-3 bases max; mid-range comfort; assumed solo traveler",
              countries_wanted="either")
-DECISION = dict(reply="Perfect. Two slow, sunny weeks from Boston for around $3k. Finding three trips for you now.",
+DECISION = dict(reply="Two slow, sunny weeks from Boston for around $3k, with surf lessons and great food.",
                 brief=BRIEF)
 
 
