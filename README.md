@@ -41,7 +41,7 @@ The browser carries the brief and the chosen option between the two calls, so th
 
 | Piece | File | What it does |
 |---|---|---|
-| Agent runtime | `backend/agent.py` | Tool-use loop on the raw Anthropic SDK (no framework). Tools run in parallel, tool errors go back to the model, and the last turn forces `submit`. |
+| Agent runtime | `backend/agent.py` | Tool-use loop on the raw Anthropic SDK (no framework). Tools run in parallel, tool errors go back to the model, and every agent must finish through a `submit` tool (`tool_choice: auto` with a nudge, since current models reject forced tool choice). |
 | Contracts | `backend/schemas.py` | Each agent finishes by calling a `submit` tool whose schema is a Pydantic model. Sums and date arithmetic are validators, so bad output goes back to the model with the error. |
 | Agents | `backend/crew.py` | The seven agents as data. The Brief's second round uses an output with no room for questions, which is what enforces one question round. |
 | Orchestration | `backend/pipeline.py` | `plan_options()` and `plan_trip()`, plain async. Logistics runs after the itinerary so stays match its towns; a reviewer rejection re-runs both. |

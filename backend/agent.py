@@ -1,7 +1,10 @@
 """A minimal agent runtime on the raw Anthropic SDK, no framework.
 
 Loop: call the model -> run any tool_use blocks (in parallel) -> feed tool_result
-back -> repeat until the model calls its `submit` tool. The submit tool's
+back -> repeat until the model calls its `submit` tool. Current models (e.g.
+Claude Sonnet 5.5) reject forced tool_choice, so tool_choice stays `auto`: the
+system prompt requires `submit`, a text-only reply gets a nudge, and the last
+turn is announced. The submit tool's
 input_schema is a Pydantic model, so the final answer is validated structured
 data. If validation fails, the error goes back to the model to fix.
 """
@@ -23,6 +26,10 @@ T = TypeVar("T", bound=BaseModel)
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
 
 MODEL = os.getenv("TRADEWINDS_MODEL", "claude-sonnet-5-5")
+SUBMIT_RULE = ("\n\nWhen you are done, call the `submit` tool exactly once with your final answer. "
+               "Never finish with a text-only reply: your work only counts when it arrives through `submit`.")
+NUDGE = "You replied without calling a tool. Call the `submit` tool now with your final answer."
+FINAL_TURN = "This is your final turn: call the `submit` tool now with your best final answer."
 _client: AsyncAnthropic | None = None
 
 
@@ -67,12 +74,10 @@ class Agent(Generic[T]):
         t0 = time.monotonic()
 
         for turn in range(self.max_turns):
-            # On the last turn, force the submit tool so we always terminate.
-            tool_choice = {"type": "tool", "name": "submit"} if turn == self.max_turns - 1 else {"type": "any"}
             try:
                 resp = await client().messages.create(
-                    model=MODEL, max_tokens=self.max_tokens, system=self.system,
-                    tools=tools, tool_choice=tool_choice, messages=messages,
+                    model=MODEL, max_tokens=self.max_tokens, system=self.system + SUBMIT_RULE,
+                    tools=tools, tool_choice={"type": "auto"}, messages=messages,
                 )
             except (APIStatusError, APIConnectionError) as e:
                 await emit({"type": "agent_error", "agent": self.name, "message": str(e)})
@@ -115,6 +120,12 @@ class Agent(Generic[T]):
             for c in calls:
                 if c.id not in answered:
                     results.append({"type": "tool_result", "tool_use_id": c.id, "content": "skipped"})
+            next_is_last = turn + 1 == self.max_turns - 1
+            if not calls:
+                messages.append({"role": "user", "content": FINAL_TURN if next_is_last else NUDGE})
+                continue
+            if next_is_last:
+                results.append({"type": "text", "text": FINAL_TURN})
             messages.append({"role": "user", "content": results})
 
         raise RuntimeError(f"{self.name} did not submit within {self.max_turns} turns")

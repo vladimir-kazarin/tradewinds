@@ -220,7 +220,7 @@ class FakeMessages:
         self.cursors = {k: iter(v) for k, v in SCRIPTS.items()}
 
     async def create(self, *, system, **_):
-        name = next(a.name for a in crew.ALL_AGENTS if a.system == system)
+        name = next(a.name for a in crew.ALL_AGENTS if a.system + agent_mod.SUBMIT_RULE == system)
         await asyncio.sleep({"brief": 1.2, "judge": 1.5, "itinerary": 2.2, "logistics": 2.6}.get(name, 1.4))
         return resp(*next(self.cursors[name]))
 
