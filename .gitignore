@@ -3,3 +3,4 @@ __pycache__/
 .env
 *:Zone.Identifier
 .superpowers/
+.venv/
