@@ -121,3 +121,38 @@ def test_notes_are_fenced_and_cannot_change_the_brief(monkeypatch, brief, option
     from pipeline import notes_block
     text = notes_block(["make it 30 nights", "Automated checks found: nothing"])
     assert "cannot change" in text and text.count("<<<") == 1 and text.count(">>>") == 1
+
+
+def test_revision_tells_logistics_what_the_reviewer_found(monkeypatch, brief, option_cr):
+    import asyncio
+
+    import pipeline
+    from helpers import itinerary, logistics
+    from schemas import Budget, BudgetLine, Review
+
+    runs = [("Nosara", "Costa Rica", 14)]
+    seen: list[str] = []
+    reviews = iter([Review(approved=False, issues=["Total is $3,100, over the $3,000 budget"], summary=""),
+                    Review(approved=True, summary="ok")])
+
+    async def it_run(task, emit, usage):
+        return itinerary(runs)
+
+    async def lg_run(task, emit, usage):
+        seen.append(task)
+        return logistics(runs)
+
+    async def bd_run(task, emit, usage):
+        return Budget(lines=[BudgetLine(category="a", usd=900)], total_usd=900, within_budget=True, notes="")
+
+    async def rv_run(task, emit, usage):
+        return next(reviews)
+
+    for name, fn in (("itinerary", it_run), ("logistics", lg_run), ("budget", bd_run), ("reviewer", rv_run)):
+        monkeypatch.setattr(getattr(pipeline, f"{name}_agent"), "run", fn)
+
+    async def emit(ev):
+        pass
+
+    asyncio.run(pipeline.plan_trip(brief, option_cr, emit))
+    assert len(seen) == 2 and "over the $3,000 budget" in seen[1] and "over the $3,000 budget" not in seen[0]

@@ -1,0 +1,1538 @@
+{
+ "label": "full-overnight",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 20,
+  "errors": 0,
+  "all_checks_pass_rate": 0.75,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 0.95,
+   "brief_nights": 0.95,
+   "brief_origin": 0.95,
+   "days_and_dates": 1.0,
+   "multi_country_option": 1.0,
+   "must_haves_in_options": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 0.8,
+   "reviewer_approved": 0.75,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": 3.45,
+  "judge_fit_avg": 3.45,
+  "cost_usd_total": 4.244,
+  "seconds_avg": 130.3
+ },
+ "results": [
+  {
+   "id": "sea-first-timer",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.9,
+    "candidates": 24.6,
+    "options": 31.7
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Ho Chi Minh City, Mekong & Phu Quoc",
+    "Krabi, Koh Lanta & Trang islands",
+    "Penang & Langkawi"
+   ],
+   "plan_waits": {
+    "plan_part": 39.4,
+    "plan": 67.2
+   },
+   "plan_total_usd": 1690,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip runs Feb 1–22 (21 nights) with 3 bases, and the stays add up: 5 nights Saigon, 3 Can Tho and 13 Phu Quoc. It has street food, a long island stretch and dorm hostels, and it avoids resorts and rushed changes. Costs total about $1,690 against the $1,750 budget, which is tight but under. The Can Tho to Rach Gia bus plus ferry on day 9 is workable, about 5.5 hours of travel on a slow day.\n\nNon-blocking notes:\n- The flight price is only an estimate. Hold baggage and visa costs could eat the roughly $60 of headroom.\n- Day 1 says to fly overnight on Feb 1 and then arrive that afternoon. A real LHR departure on Feb 1 would land on Feb 2, so consider leaving on Jan 31. Dates are flexible, so this isn't blocking.\n- Day 22 has a PQC to SGN flight followed by a long-haul connection. This is workable if you book it as one ticket or leave a buffer of 4+ hours, as the logistics notes say.\n- Days 13, 16 and 19 are thin on activities. They could be filled with Phu Quoc street food specifics.\n- The Phu Quoc lat/lon is used for the whole island, which is fine.\n- Day 12's scooter hire needs a licence. The itinerary gives the bus as a fallback."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     39.4
+    ],
+    [
+     "logistics",
+     8.8
+    ],
+    [
+     "budget",
+     13.7
+    ],
+    [
+     "reviewer",
+     5.4
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "The budget adds up ($1,536 subtotal plus $154 buffer = $1,690) and Vietnam is the cheapest of the three options, with real street food in Saigon and an island stretch. The biggest misfit is 13 nights parked on Phu Quoc, which makes the back half feel slow and repetitive for a street-food-focused trip, and the flight estimate of $740 long-haul is the main unverified cost. Day 22 also needs a tight SGN connection from the island, so the buffer should be kept."
+   },
+   "cost_usd": 0.1677,
+   "seconds": 106.7
+  },
+  {
+   "id": "vague-warm",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 5.7,
+    "candidates": 31.4,
+    "options": 39.4
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": false,
+    "brief_nights": false,
+    "brief_origin": false,
+    "plan_within_budget": false,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "Oaxaca Coast (Mazunte & Zipolite)",
+    "San Juan del Sur & Pacific Coast, Nicaragua",
+    "Bacalar Lagoon & Quintana Roo Caribbean"
+   ],
+   "plan_waits": {
+    "plan_part": 24.3,
+    "plan": 88.4
+   },
+   "plan_total_usd": 679,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Total is $679 against a $600 cap. Rebuild the plan so it fits at or under $600, for example by cutting nights to about 10-11, dropping or reducing the 10% buffer, or using a cheaper flight route. Don't leave the overrun for the traveler to solve.",
+     "Numbers conflict across sections. The chosen trip says $594, the budget says $679, and the logistics say $15/day food while the budget uses $10/day. The logistics also say the plan works under $260 or under $200, but the budget needs about $181. Use one consistent set of figures.",
+     "Day 1 tells the traveler to shorten the stay if the fare is over about $200, which contradicts the $260 and $181 thresholds elsewhere. Remove or fix that line, and set a realistic flight figure that fits the cap.",
+     "The 14-night stay in two bases costs more than needed. Consider one base, or fewer nights, so the plan fits the budget without relying on an unlikely cheap fare."
+    ],
+    "summary": "The itinerary dates, day count and stays line up: 15 days, 14 nights, 7 in Mazunte and 7 in Zipolite. The transfers are workable. The budget is the blocking problem. The plan's own budget totals $679 and sets within_budget to false, which is $79 over the $600 cap. The plan only works if the flight costs far less than the $260 it assumes. The documents also contradict each other on costs and ask the traveler to fix the overrun. Non-blocking: the origin is assumed (LAX), and the flight price is a guess."
+   },
+   "revisions": [
+    [
+     "Total is $695 vs the $600 cap. Rebuild the budget so it comes to $600 or less, not just a list of suggested cuts. For example: food $8/day = $120, dorms at $9-10 = about $135, activities about $10, and a smaller buffer. Also assume a flight of about $200 or less, or pick a cheaper assumed origin or route.",
+     "Make the trip card rough_cost ($594, with $154/day spend) match the budget lines. Right now the card, the logistics notes ($190 left for food) and the budget table disagree.",
+     "The flight is a $260 guess for an assumed IAH origin, and the brief gives no origin. Say plainly that the fare must be under about $200 for the plan to hold. Consider a cheaper plan such as 10-11 nights, which the saving tips already mention, if the fare comes in higher.",
+     "The highlights promise things the days don't include: a bioluminescent lagoon night, and releasing turtles (the turtle release is seasonal and not guaranteed). Either schedule and cost them, or remove them."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     24.3
+    ],
+    [
+     "logistics",
+     6.3
+    ],
+    [
+     "budget",
+     12.1
+    ],
+    [
+     "reviewer",
+     5.9
+    ],
+    [
+     "itinerary",
+     17.0
+    ],
+    [
+     "logistics",
+     5.4
+    ],
+    [
+     "budget",
+     11.5
+    ],
+    [
+     "reviewer",
+     5.9
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Strong match for warm, cheap, beach, chill, and the $10-11 dorm beds and Mazunte/Zipolite base pairing are realistic. But the plan totals $679, $79 over the $600 cap, and the $260 flight to Huatulco assumes an unconfirmed LAX origin, so the biggest missed saving is a cheaper fare or a Mexico City/Oaxaca routing. The option card's $594 figure also omits the buffer the plan includes, so the two numbers don't match."
+   },
+   "cost_usd": 0.2293,
+   "seconds": 132.7
+  },
+  {
+   "id": "andes-trek",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.5,
+    "candidates": 16.9,
+    "options": 27.0
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Salento & Cocora Valley (Colombian Andes)",
+    "Huaraz & Cordillera Blanca",
+    "Cusco & Sacred Valley"
+   ],
+   "plan_waits": {
+    "plan_part": 28.2,
+    "plan": 103.6
+   },
+   "plan_total_usd": 996,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The itinerary covers May 1–15 2027, which is 14 nights, and it stays in the Andes in Colombia. The total is about $996 against a $1,600 budget. The Cocora, Iguaque and Los Nevados hikes meet the must-have, and the transfers are workable.\n\nNon-blocking notes:\n- The stays and budget list 3 Bogotá nights (2 + 1). The plan takes the overnight bus on night 7, so only 2 Bogotá nights are used. Either drop the third Bogotá night (about $13) from the stays and budget, or say the third night is optional.\n- The Pereira–Miami return probably connects through Bogotá. The flight price is an estimate, and there is plenty of budget room to cover a higher fare.\n- The Los Nevados day trip from Salento is a long day. Confirm that a shared tour actually runs from Salento."
+   },
+   "revisions": [
+    [
+     "Day 7 doesn't work as written. The itinerary has Villa de Leyva to Bogotá by bus (about 4h), then 'a cheap flight or bus' to Armenia or Pereira, then a colectivo, with a Salento check-in that evening. The budget instead prices an overnight Bogotá–Pereira bus ($33) and has no flight line. The bus arrives on day 8, so the Salento night of day 7 would be unused and the evening check-in is impossible. Pick one option. Either book a specific afternoon BOG–PEI/AXM flight and add its $40–60 to the budget, or keep the overnight bus. If you keep the bus, add the extra night in Bogotá or Villa de Leyva, fix the day 7 text, and adjust the stay nights to match.",
+     "The day 7 and day 15 transfers need to be consistent with the open-jaw flight. Day 15 leaves Salento by colectivo and bus for Pereira airport, which is fine. Make sure the day 7 route doesn't add an unplanned flight on top of the PEI–MIA return."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     28.2
+    ],
+    [
+     "logistics",
+     6.5
+    ],
+    [
+     "budget",
+     13.2
+    ],
+    [
+     "reviewer",
+     11.1
+    ],
+    [
+     "itinerary",
+     14.5
+    ],
+    [
+     "logistics",
+     6.1
+    ],
+    [
+     "budget",
+     12.2
+    ],
+    [
+     "reviewer",
+     11.8
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 3,
+    "notes": "Budget is lean and the arithmetic holds ($996 sums correctly), but the $330 open-jaw flight is the weak point: MIA-BOG plus PEI-MIA with no direct Pereira-Miami link likely costs more, so the real total could land nearer $1,200-1,300, still under budget. Fit is weaker: Villa de Leyva's badlands, fossils and Casa Terracota are sightseeing, not Andes hiking, and several days are rest or \"empty\" days, leaving only about 3-4 real hikes (Cocora, Iguaque, Los Nevados, coffee-farm trails) for a two-week hiking brief. Swapping the Villa de Leyva block for extra Cocora/Valle de Cocora or Los Nevados trekking days would fit better."
+   },
+   "cost_usd": 0.2124,
+   "seconds": 140.8
+  },
+  {
+   "id": "balkans-multi",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 9.8,
+    "candidates": 35.2,
+    "options": 43.7
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "multi_country_option": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Lake Ohrid, Rila Mountains & Albanian Highlands",
+    "Albanian Alps, Montenegro Bay & Kosovo",
+    "Belgrade, Sarajevo & Montenegro Rail-and-Bus Route"
+   ],
+   "plan_waits": {
+    "plan_part": 25.1,
+    "plan": 46.9
+   },
+   "plan_total_usd": 842,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip runs 2027-09-01 to 09-16, which is 15 nights. Stays add up to 4+5+6 = 15 nights and match the day bases. It covers three countries (Bulgaria, North Macedonia, Albania) with three bases, uses hostels and guesthouses, and moves between cities by bus. Nothing on the avoid list appears. The budget lines add up to $842, under the $1,000 limit.\n\nMinor, non-blocking notes:\n- Day 5 is a long Sofia–Skopje–Ohrid bus day of about 9–10 hours. It is feasible and the day is labelled slow, but check the departure times.\n- Flight and bus prices are estimates.\n- The Rila day trip from Sofia is about 2.5 hours each way, so catch the early bus.\n- Day 14 offers a bus or train to Durrës. Pick one when you get there."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     25.1
+    ],
+    [
+     "logistics",
+     6.2
+    ],
+    [
+     "budget",
+     8.3
+    ],
+    [
+     "reviewer",
+     7.3
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 3,
+    "notes": "Cost is reasonable at about $842 for 15 nights across Bulgaria, North Macedonia and Albania, using hostel dorms and cheap buses. The $14/night figure for a lakeside Ohrid guesthouse in September is optimistic, and the $170 open-jaw flight estimate is unverified. Fit is weaker: six of the 15 nights are in Tirana, a city base that is less chill and scenic than the brief's mountains/coast vibe, and Day 9 and Day 8 are filler, so ~$158 of headroom goes unused on better stays or a slower route."
+   },
+   "cost_usd": 0.145,
+   "seconds": 98.1
+  },
+  {
+   "id": "japan-tight",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 7.2,
+    "candidates": 20.1,
+    "options": 27.8
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Kyoto + Nara + Osaka (Kansai)",
+    "Hiroshima + Miyajima + Onomichi (Setouchi)",
+    "Kanazawa + Shirakawa-go + Takayama (Hokuriku)"
+   ],
+   "plan_waits": {
+    "plan_part": 19.2,
+    "plan": 39.2
+   },
+   "plan_total_usd": 1976,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The itinerary is Japan only and runs 2027-04-01 to 04-11, which is 10 nights and 11 days. The stays are 3 + 6 + 1 = 10 nights and match the day bases. Round-trip LAX-KIX flights are included. The total is $1,976, under the $2,000 cap. Hostel dorms and local rail keep it on the budget-backpacker brief, and there are no impossible transfers. Non-blocking notes: (1) The budget has almost no margin, and it depends on the $1,000 flight estimate holding. (2) The logistics text gives $150 for transport and about $1,910 in total, but the budget uses $110 and $1,976. The two sections should be reconciled. (3) The Day 11 text says you arrive in LA the same day after crossing the date line. That is correct, but the wording is clumsy. (4) The Day 1 arrival and Day 11 departure timing depends on the actual flights. Morning arrival at KIX is typical for ZIPAIR, but check the schedule. (5) Day 9 is an empty day and could be used for a side trip."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     19.2
+    ],
+    [
+     "logistics",
+     6.6
+    ],
+    [
+     "budget",
+     9.0
+    ],
+    [
+     "reviewer",
+     4.5
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 3,
+    "notes": "Biggest risk is the budget: the $1,000 LAX-KIX round trip and $32-38 dorm beds are optimistic for early April peak blossom season, and the $1,976 total leaves almost no margin, so a realistic fare or Kyoto hostel rates could push it past $2,000. Fit is weaker than the brief: Kansai is almost all city, with Nara as the only countryside-like stop, so the \"city and countryside\" request is underserved, and \"Empty day\" and \"Quiet northern Kyoto\" are padding rather than countryside time."
+   },
+   "cost_usd": 0.1058,
+   "seconds": 73.2
+  },
+  {
+   "id": "mexico-surf-month",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 7.7,
+    "candidates": 31.2,
+    "options": 43.7
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": false,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "Guadalajara Spanish + Nayarit coast surf (San Pancho/Sayulita)",
+    "Mazatlán (surf + Spanish, one base)",
+    "Puerto Escondido surf + Oaxaca city Spanish"
+   ],
+   "plan_waits": {
+    "plan_part": 42.5,
+    "plan": 123.8
+   },
+   "plan_total_usd": 1805,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Total is $1,805 against a $1,600 budget. Apply the cuts so the budget lines sum to $1,600 or less with within_budget true. Options: a $50-100 cheaper flight by shifting dates, food at about $300, a $150 school, 2-3 board rentals, and a 5% buffer.",
+     "The numbers don't agree with each other. The rough_cost in the trip shows $1,500, the logistics notes say about $1,570, and the budget sheet says $1,805. Make them one consistent total.",
+     "The highlights and budget mention a tequila day trip, but no day in the itinerary includes it. Either add it or remove it from the highlights and the budget.",
+     "Day 30 shows the base as Guadalajara but the stays list and nights are fine. The logistics `transfers` array is empty even though the GDL to coast buses are priced. Fill in the transfers."
+    ],
+    "summary": "The plan is blocked because its own budget total is $1,805, which is $205 over the $1,600 limit. The budget sheet says within_budget is false and only suggests cuts without applying them. The dates, day count and nights otherwise fit the brief. That's 9+20+1 = 30 nights, with Mexico, surf and Spanish all covered. Two bases is fine. The bus days are slow days with no other travel."
+   },
+   "revisions": [
+    [
+     "The total is $1,999 against a $1,600 budget. Rebuild the plan so the table itself totals $1,600 or less. Don't just describe cuts in the notes.",
+     "Apply the cuts in the plan: one week of Spanish school (about $100), one surf lesson plus board rental (about $40), food of about $300, activities of about $20, and a 5% buffer. Then update the Spanish-school days (days 4–13) and the surf days to match.",
+     "Cut lodging and flight costs. Pick Volaris or Viva Aerobus fares for the flight, which is $420 now. Use $12–14 dorm beds in Guadalajara and San Pancho, or shorten the coast stay. Lodging is $564 of the total.",
+     "The Spanish school sign-up is only on day 3, and the plan assumes two weeks of classes. After cutting to one week, make the schedule consistent and use the freed days for the coast. This also lets you avoid the 5–6 hour bus on the same day as other travel."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     42.5
+    ],
+    [
+     "logistics",
+     6.8
+    ],
+    [
+     "budget",
+     12.5
+    ],
+    [
+     "reviewer",
+     6.0
+    ],
+    [
+     "itinerary",
+     31.3
+    ],
+    [
+     "logistics",
+     6.5
+    ],
+    [
+     "budget",
+     12.8
+    ],
+    [
+     "reviewer",
+     5.4
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "The plan's own budget totals $1,805, which is $205 over the $1,600 cap, so it does not fit the budget as written; the suggested cuts are a patch, not a plan. The $420 YYZ-GDL round trip is an optimistic estimate, and the dorm beds, bus fares and food are reasonable for Mexico. Fit is good: two bases, Mexico, one week of Spanish, and a mellow surf town, though surf lessons are thin (one lesson plus rentals) and the Spanish week is short for a month-long learning goal."
+   },
+   "cost_usd": 0.3528,
+   "seconds": 175.4
+  },
+  {
+   "id": "weekend-europe",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 6.3,
+    "candidates": 22.1,
+    "options": 27.6
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Budapest",
+    "Porto",
+    "Krakow"
+   ],
+   "plan_waits": {
+    "plan_part": 12.8,
+    "plan": 31.2
+   },
+   "plan_total_usd": 407,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip is 12–16 March 2027, which is 4 nights in one Budapest base and matches the brief. MAN–BUD is a direct budget flight of about 2.5 hours. The 100E bus and metro transfers are simple. The itinerary includes ruin bars and a social hostel, and it avoids the expensive cities on the avoid-list. The budget lines add up to $407, under the $440 limit. Minor, non-blocking points: (1) The 12 March flight is called \"early\" but not confirmed. (2) The 72-hour travel card is probably more than needed. (3) The bath day says \"midweek-style\" although 14 March is a Sunday. (4) Day 4 is intentionally light. (5) Flight, bath and bus prices are estimates. (6) 12 March 2027 is a Friday. (7) The 100E bus doesn't go to District VII directly, so a metro change is needed. The itinerary already says this."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     12.8
+    ],
+    [
+     "logistics",
+     5.2
+    ],
+    [
+     "budget",
+     9.8
+    ],
+    [
+     "reviewer",
+     3.5
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Budapest fits the nightlife, budget-airline and short-transfer asks, and $407 is within the $440 budget. But it is not the cheapest option: Krakow comes in around $274 on the same brief, so the plan misses an easy saving. The option card says $317 while the plan says $407, the transfers array is empty even though the budget includes airport bus fare, and the $35 bath entry and unverified $110 flight are soft estimates."
+   },
+   "cost_usd": 0.0907,
+   "seconds": 66.0
+  },
+  {
+   "id": "festival-oaxaca",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 5.1,
+    "candidates": 26.1,
+    "options": 36.0
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Oaxaca City + Valley day trips",
+    "Oaxaca City + Sierra Norte pueblos",
+    "Oaxaca City + Mazunte beach finish"
+   ],
+   "plan_waits": {
+    "plan_part": 18.6,
+    "plan": 38.5
+   },
+   "plan_total_usd": 1085,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. Dates (Oct 30 to Nov 8, 2027), 9 nights, and a single Oaxaca base all match the brief. The itinerary covers Nov 1-2 with comparsas and cemetery visits, and dorm beds are used. The budget total is $1,085, under the $1,100 cap. No transfers are impossible: the arrival and departure days are travel-only. Non-blocking notes: (1) Headroom is thin at $15, and flights are only an estimate during peak Muertos week. The MEX plus ADO bus fallback is mentioned, but an overnight bus after a flight would use up the savings. (2) The trip's rough_cost ($930) differs from the final budget ($1,085). The final budget is the figure to use. (3) Day 8 says 'Xochimilco neighborhood murals' and Day 3 puts Xoxocotlán on the evening of Nov 1. Check the colectivo return times, since late-night returns can be limited. (4) Day 7 is titled 'sunrise-ish', but the Monte Albán shuttle starts around 8-9am."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     18.6
+    ],
+    [
+     "logistics",
+     5.4
+    ],
+    [
+     "budget",
+     7.2
+    ],
+    [
+     "reviewer",
+     7.3
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 5,
+    "notes": "Fit is strong: single Oaxaca base covers Nov 1-2 Muertos, dorm beds are accepted, and the food, market, and day-trip mix matches the brief. The biggest risk is the $450 round-trip flight estimate. Austin to Oaxaca during peak Muertos week with a connection could easily run $500+, which would break the $1,100 budget. The $15 headroom leaves little cushion, and the plan doesn't price a real fare. Hostel at $24/night in peak week is also optimistic, and Hierve el Agua is listed under city days though it's a separate trip."
+   },
+   "cost_usd": 0.1109,
+   "seconds": 80.0
+  },
+  {
+   "id": "aussie-sea",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 3.4,
+    "candidates": 38.7,
+    "options": 46.1
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Lombok & Gili Islands + Bali's Amed",
+    "Moalboal & Dumaguete/Apo Island, Visayas",
+    "Perhentian Islands to Koh Tao"
+   ],
+   "plan_waits": {
+    "plan_part": 33.9,
+    "plan": 112.9
+   },
+   "plan_total_usd": 1595,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. Dates run 1–22 July 2027 and the nights add up: 1 Sanur, 9 Amed, 10 Gili Air and 1 Sanur make 21. The stays match the day bases. The budget lines sum to USD 1,595, which is under the USD 1,650 cap. Both must-haves are covered: beaches, and 8 dives at Amed and Gili Air. It avoids expensive resort areas and steers clear of Gili T. The transfers are feasible: the Amed to Padangbai shuttle leaves at 7:00 and connects with the 9:30 fast boat, and the Gili Air to Bali boat leaves at 13:00 with time to reach Sanur that evening.\n\nNon-blocking notes:\n- The itinerary only has a single country, although the brief says \"several\" countries were wanted. The brief also says combining countries is fine, so this is acceptable.\n- Headroom is thin, at about USD 55. The July school-holiday flight price is uncertain.\n- The Day 21 fast boat arrival could be tight. It is safer to confirm the boat goes to Padangbai or Serangan, and to confirm where it lands.\n- The Day 22 flight time isn't stated. Confirm that an afternoon departure is available.\n- The rough_cost transfers figure of USD 60 differs from the itemised USD 105, but the itemised figure is the one used and is fine.\n- The weather summary shows 7 rainy days out of 22, which is a minor point."
+   },
+   "revisions": [
+    [
+     "Total is USD 1,843, which is USD 193 over the USD 1,650 budget. Apply the cuts and re-issue the budget with a total at or under 1,650. Aim for about USD 1,600, because flights may go above the 480 estimate in school-holiday peak. Cuts to apply: reduce the 12 dives to about 8 (saves about 160), set food to USD 10 a day (saves about 44), and drop bike hire (saves about 30). Then update the itinerary's dive days to match.",
+     "The itinerary shows about 12 dives (days 4, 6, 8, 13, 16 and 19), but the budget logistics assumed 8. Make the dive count the same in the itinerary days, the logistics text and the budget lines.",
+     "Day 11 is vague: 'public boat or fast boat from Padangbai or Amed'. Pick one concrete route. Amed to Gili Air direct boats are limited, so the budget's USD 40 may not hold. Confirm the route and price. Also say how the Gili Air to DPS return on day 22 reaches the flight, since the plan says only 'early boat plus shuttle', and the pickup and drop-off timing is tight. Consider staying a night near DPS or Padangbai on 21 July, or give a firm departure time."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     33.9
+    ],
+    [
+     "logistics",
+     6.9
+    ],
+    [
+     "budget",
+     12.4
+    ],
+    [
+     "reviewer",
+     6.5
+    ],
+    [
+     "itinerary",
+     30.4
+    ],
+    [
+     "logistics",
+     6.7
+    ],
+    [
+     "budget",
+     9.5
+    ],
+    [
+     "reviewer",
+     6.6
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 3,
+    "notes": "Budget arithmetic checks out (itemised lines sum to USD 1,595), and Indonesian dorms, warung food and boat transfers are realistic for the price. The main misfit is that the brief asked for several countries and this plan is Indonesia only. The USD 420 SYD-DPS return is optimistic for July school holidays and carries most of the budget risk, and 8 dives at USD 40 is pricier than the Philippines or Koh Tao options. Several days are unplanned filler (\"Free day\", \"Do nothing\"), which is fine for slow travel but leaves diving light."
+   },
+   "cost_usd": 0.3639,
+   "seconds": 169.1
+  },
+  {
+   "id": "couple-private",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.7,
+    "candidates": 20.0,
+    "options": 24.5
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": false,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Porto + Douro coast (Porto & Aveiro/Costa Nova)",
+    "Lisbon + Arrábida/Setúbal coast",
+    "Valencia city & beaches"
+   ],
+   "plan_waits": {
+    "plan_part": 24.1,
+    "plan": 93.6
+   },
+   "plan_total_usd": 3278,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Total is $3,278 against the $2,800 cap, so it is $478 over. Rebuild the plan to come in under $2,800 with the buffer included. Options: a cheaper flight, trimmed lodging, and dropping or reducing the paid extras.",
+     "Flights are costed at $1,500 for two, while `rough_cost` says $850. Use one consistent, researched fare. Look for roughly $1,000-1,100 for two (shoulder-season one-stop via EWR/JFK, flexible dates) and update every section to match.",
+     "Lodging at $65 and $60 a night plus food at $40/day leaves no room for the buffer. Lower lodging to about $50-55 a night. Make the food figure consistent between the logistics note ($60-70/day) and the budget ($40/day). Cut the 10% buffer to about 5% only if the total still fits.",
+     "The logistics note and `rough_cost` claim about $2,400-2,500 total, which contradicts the budget lines. Remove or correct them so all totals agree."
+    ],
+    "summary": "The itinerary is sound. It has two private-room bases, one short train move, a slow pace, and dates and nights that match the brief. The budget is the blocker. The budget's own lines total $3,278, which is $478 over the $2,800 cap, and `within_budget` is false. The $2,400 and $2,500 figures in `rough_cost` and the logistics note contradict the budget lines and shouldn't be used. Minor points: the budget says $40/day for food but the logistics note says $60-70/day, and day 13 is labelled Aveiro although the traveler spends it moving to Porto."
+   },
+   "revisions": [
+    [
+     "Total is $2,935 against the $2,800 cap, so it is $135 over. Rebuild the plan so the total, including any buffer, is at or under $2,800. Options are a lower flight assumption (about $1,150 for two, or book midweek and one-stop), Aveiro at about $55/night, a smaller contingency (5% instead of 10%), and food at about $30/day.",
+     "Make the numbers consistent. The logistics text says stays are $810, transport is $90 and the total is about $2,700. The budget sheet says stays are $810, transport is $78 and the total is $2,935. Use one itemised budget in both places, and update the stale $2,400 and $850 flight figures in the route summary.",
+     "Day 13 says to fly home after taking the train and metro, but gives no flight time. Add a note to book a mid-afternoon or later flight, or to travel to Porto the evening before, so the Aveiro to OPO transfer works."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     24.1
+    ],
+    [
+     "logistics",
+     6.6
+    ],
+    [
+     "budget",
+     13.7
+    ],
+    [
+     "reviewer",
+     6.2
+    ],
+    [
+     "itinerary",
+     15.6
+    ],
+    [
+     "logistics",
+     6.4
+    ],
+    [
+     "budget",
+     14.8
+    ],
+    [
+     "reviewer",
+     6.2
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 3,
+    "notes": "The plan's own budget totals $3,278, about $478 over the $2,800 must-have cap, so it fails the stated constraint as written. The biggest miss is the $1,500 flight estimate, which conflicts with the $850 in rough_cost, and the transfers field is empty even though the trip ends with a departure from OPO after an Aveiro base (roughly 1.5 hours away) that isn't costed. The Porto + Aveiro base choice itself is cheap and matches the relaxed, city-and-coast, good-food brief with private rooms, but the plan should have been reworked to fit under $2,800 rather than offered over it."
+   },
+   "cost_usd": 0.2046,
+   "seconds": 123.5
+  },
+  {
+   "id": "india-solo-female",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 4.9,
+    "candidates": 24.2,
+    "options": 31.0
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Himalayan Foothills: Delhi – Rishikesh – Haridwar",
+    "Rajasthan Pink & Blue: Delhi – Jaipur – Udaipur",
+    "Kerala Backwaters & Beaches: Kochi – Alleppey – Varkala"
+   ],
+   "plan_waits": {
+    "plan_part": 26.6,
+    "plan": 105.9
+   },
+   "plan_total_usd": 1492,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. Dates (Nov 2–16, 14 nights) and day count (15 days) match the brief. Stays total 3+7+2+2 = 14 nights and line up with the day bases. The budget totals $1,492, under the $1,500 cap. The women-only dorms, 24h reception, daytime trains and buses, and a mix of city, culture and nature all meet the brief. Non-blocking notes: (1) The margin is thin. A flight fare above about $915 breaks the budget, though the 10% buffer helps. (2) The Day 4 note about the Shatabdi stopping at Haridwar should be verified. Some Shatabdi services run on to Dehradun. (3) The Haridwar guesthouse is a private room, not a dorm, which is acceptable under the brief. (4) A flight that lands in daylight must be chosen, since long-haul arrivals into DEL are often at night. (5) The transfers list is empty, but the costs are covered in the budget."
+   },
+   "revisions": [
+    [
+     "Budget only works at a $900 flight. The logistics estimate is $950, which gives about $1,547 total and is over the $1,500 cap. Rebuild the budget with a realistic $950 flight and cut about $50 or more elsewhere so the total stays at or below $1,500. For example, lower the buffer, trim food to about $16 a day, and drop the paid massage. Don't rely on a fare that may not be available.",
+     "The fallback in the notes (cut Delhi to one night, drop the Kunjapuri jeep) would change the 14-night plan and saves very little. Replace it with concrete cuts that keep the itinerary intact.",
+     "Make the flight figure consistent across the trip summary ($900), logistics ($950) and budget ($900). The rough_cost total of $1,376 also doesn't match the $1,497 budget total."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     26.6
+    ],
+    [
+     "logistics",
+     7.6
+    ],
+    [
+     "budget",
+     12.1
+    ],
+    [
+     "reviewer",
+     9.2
+    ],
+    [
+     "itinerary",
+     14.3
+    ],
+    [
+     "logistics",
+     10.5
+    ],
+    [
+     "budget",
+     19.9
+    ],
+    [
+     "reviewer",
+     5.5
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 3,
+    "notes": "The arithmetic checks out ($1,356 subtotal + $136 buffer = $1,492), but it depends on a $900 flight estimate, and a $915 fare already breaks the buffer. The Haridwar stay is a private guesthouse room, not a hostel, with no women-only dorm or confirmed 24h reception, which misses the must-haves. The Rishikesh and Delhi hostels are unnamed, so their 24h reception and women-only status are unverified. The Mansa Devi ropeway is budgeted but the saving tips say to skip it."
+   },
+   "cost_usd": 0.2237,
+   "seconds": 150.8
+  },
+  {
+   "id": "no-flights",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.5,
+    "candidates": 28.5,
+    "options": 43.1
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Krakow, Zakopane & High Tatras",
+    "Saxon & Bohemian Switzerland + Prague",
+    "Gdansk to Vilnius and Trakai"
+   ],
+   "plan_waits": {
+    "plan_part": 42.8,
+    "plan": 195.1
+   },
+   "plan_total_usd": 762,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "The itinerary meets the brief and has no blocking problem.\n\n- **Dates and days:** It runs Aug 1–15, which is 14 nights. Both overnight coaches replace a bed, so there are 12 paid nights, and the budget uses 12.\n- **Budget:** The total is $762 against $780. The margin is thin, but the budget sheet is internally consistent.\n- **Brief:** There are no flights. Poland and Slovakia are reachable by coach, and there are 3 bases plus a return to Kraków.\n- **Transfers:** All of them work, and none is impossible as written. Day 10 is a long slow day (tram, 2–2.5h minibus, then 2.5–3h bus), but it is doable.\n\nNon-blocking points to fix if you can:\n- The logistics sheet says $290 for beds and 3+5 Kraków nights. The budget uses $255 and 12 paid nights. Align the two.\n- Day 15 is labelled Krakow, but the traveler arrives in Amsterdam. Also, a 17–20h coach leaving at 15:00 on Aug 1 may arrive after the 10:00–12:00 window given. That is only a timing estimate.\n- Zakopane to Poprad minibus frequency and fares are uncertain, so check them. The Zakopane–Poprad minibus may run less often than assumed, and you may need a Łysa Polana/bus alternative.\n- Food at about $14 a day is tight.\n- There are many Kraków days at the end (Aug 10–14). One could be swapped for more hiking time, but that is only a nice-to-have."
+   },
+   "revisions": [
+    [
+     "Over budget: the plan totals $870 against $780 (within_budget=false). Apply the cuts so the itinerary, stays and budget all match and total ≤$780. For example, cut Zakopane and Starý Smokovec by one night each, trim food, and reduce the buffer. Don't leave the cuts only as notes.",
+     "Nights don't match the stays. The logistics list Kraków as 3+3 nights (2 paid each) but the itinerary has 4 paid Kraków nights (Aug 2, 3, 12, 13). Zakopane has 4 nights (Aug 4-7) and Starý Smokovec has 4 nights (Aug 8-11). Make the stays, the budget lines and the day-by-day plan consistent.",
+     "Day 1 and Day 15 are labelled base Krakow even though the traveler is on the coach, and the Day 14 coach is listed with Kraków as base. Label these as transit days. The Day 1 evening says the coach is the overnight stay, but the Day 2 arrival time isn't stated, and a Day 1 afternoon departure for a 17-20h ride arrives mid-morning at the earliest.",
+     "The Starý Smokovec to Kraków day has no concrete route. Poprad to Kraków by bus is about 4-5h via Zakopane or Nowy Targ. Name the actual connection, such as Poprad to Zakopane to Kraków, and confirm the price. Also correct the Day 8 morning, where the border bus is said to go to Poprad via Łysa Polana, which is awkward. Check that the route is feasible."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     42.8
+    ],
+    [
+     "logistics",
+     14.2
+    ],
+    [
+     "budget",
+     19.8
+    ],
+    [
+     "reviewer",
+     10.0
+    ],
+    [
+     "itinerary",
+     55.5
+    ],
+    [
+     "itinerary",
+     20.7
+    ],
+    [
+     "logistics",
+     12.2
+    ],
+    [
+     "budget",
+     14.0
+    ],
+    [
+     "reviewer",
+     6.0
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Biggest miss: the Krakow-to-Zakopane leg (about $8-10) is not costed; the $38 transfer line covers only Zakopane-Poprad and Starý Smokovec-Krakow, and the $60 local line is thin for Tatra railway, Hrebienok funicular and TPN/TANAP fees. With that added, the $18 margin is gone. Food at $200 (about $14/day) is tight for Slovakia, and the plan covers only two countries, with Krakow used twice and Morskie Oko a crowded spot, though the overland, scenic, no-flight brief is otherwise well matched."
+   },
+   "cost_usd": 0.3402,
+   "seconds": 252.3
+  },
+  {
+   "id": "patagonia-splurge-cap",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 8.1,
+    "candidates": 32.6,
+    "options": 37.0
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Classic W Trek (camping) + Puerto Natales base",
+    "W Trek + Grey Glacier extension and Cueva del Milodón",
+    "W Trek + Punta Arenas and penguin colony"
+   ],
+   "plan_waits": {
+    "plan_part": 31.5,
+    "plan": 66.5
+   },
+   "plan_total_usd": 982,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip runs Jan 10–22, 2027, which is 12 nights over 13 days. Nights add up: 2 in Natales, 6 in the park (Chileno, Central, Italiano, Francés, and 2 at Paine Grande) and 4 in Natales. The W is walked east to west, with the Torres, French Valley and Grey day hikes all placed sensibly. The day 9 catamaran and bus back to Natales works. The itinerary budget is $982 against $1,300, and everything is public transport, camping and self-catering. Minor notes, none blocking: (1) the trip's rough_cost of $1,200 doesn't match the itemised $982, so reconcile the two. (2) Campsites need booking months ahead, and Italiano and Francés are Fogliani/Vertice-run, so check the current fees. (3) The day 13 flight needs an afternoon departure after the early bus from Natales. (4) The trek has no weather buffer day, though the rest days in Natales are after the trek."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     31.5
+    ],
+    [
+     "logistics",
+     9.5
+    ],
+    [
+     "budget",
+     15.6
+    ],
+    [
+     "reviewer",
+     10.0
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 3,
+    "notes": "Value is good: about $982 against $1,300, all camping, self-catered, Natales dorms. But campsite fees ($15), the \"free\" Italiano camp and the $50 park entry look optimistic for high season, and the catamaran and bus legs are muddled (day 9 \"catamaran out and back to town\" is wrong, and the Pehoe catamaran is not the Paine Grande-to-Pudeto exit). Fit is weaker: the brief asked for a 4-5 day W, but the plan spends 6 park nights (about 7 days) and pads Natales with 4 more nights, including a do-nothing day."
+   },
+   "cost_usd": 0.1745,
+   "seconds": 125.9
+  },
+  {
+   "id": "morocco-desert",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 6.2,
+    "candidates": 26.3,
+    "options": 33.8
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Marrakesh + Imlil + Zagora/Draa Sahara camp",
+    "Marrakesh + Merzouga Erg Chebbi (via Todra/Dades)",
+    "Fes medina + Merzouga Sahara + Middle Atlas"
+   ],
+   "plan_waits": {
+    "plan_part": 26.4,
+    "plan": 53.8
+   },
+   "plan_total_usd": 660,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip covers Mar 5-15, 2027 with 11 days and 10 nights, all in Morocco. It includes a Marrakesh medina riad dorm, Imlil in the High Atlas, and a Zagora desert camp night. The stays add up to 10 nights: Marrakesh 6, Imlil 2 and Zagora 2. The $660 total is under the $800 cap. The transfers are workable. The Marrakesh–Zagora bus is about 7h, but it is on its own travel day, so nothing is stacked on top of it.\n\nNon-blocking notes:\n- Zagora dunes are less dramatic than Merzouga, which the trip already acknowledges.\n- Day 7 is a long return, with sunrise at camp followed by a 7h bus. Check the departure time so you don't arrive in Marrakesh very late.\n- The saving tip about a night bus to Zagora doesn't match the day itinerary. Drop it or reconcile the two.\n- Prices are estimates. The logistics \"transfers\" list is empty even though the ground legs are described elsewhere.\n- Days 8-10 are light and could be swapped for a Marrakesh day trip."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     26.4
+    ],
+    [
+     "logistics",
+     11.5
+    ],
+    [
+     "budget",
+     11.7
+    ],
+    [
+     "reviewer",
+     4.1
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Covers every must-have (medina riad dorm, High Atlas village, Sahara camp, Morocco only) and the $660 total is arithmetically correct and under the cap. Biggest misses: the $170 MAD-RAK round trip is optimistic and unverified, the airport bus is priced at $1 for both ways when it is closer to $6, and the Zagora bus round trip at $30 is at the low end. Roughly 14 hours of the trip are spent on buses, and six of ten nights sit in Marrakesh, so the trip leans city-heavy for a brief that asked for desert and mountains."
+   },
+   "cost_usd": 0.1436,
+   "seconds": 98.6
+  },
+  {
+   "id": "central-america-loop",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 9.0,
+    "candidates": 29.3,
+    "options": 38.9
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "multi_country_option": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Guatemala Highlands Volcano & Tikal Circuit",
+    "Antigua – Tikal – Belize Cayo – Palenque Loop",
+    "Antigua Volcanoes, Tikal & Belize Cayo Jungle"
+   ],
+   "plan_waits": {
+    "plan_part": 40.7,
+    "plan": 175.6
+   },
+   "plan_total_usd": 1805,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The brief asks for Dec 1-22 with 21 nights, and the itinerary matches that. Stays total 7+6+8 = 21 nights. Night 3 is on Acatenango, so Antigua has 6 paid beds. The budget sums to about $1,805, under $2,000. The itinerary includes two volcano hikes (Acatenango, Pacaya), Tikal and Yaxhá ruins, and social hostels. It uses daytime transfers and a flight in place of the risky night bus. The Day 14 shuttle from San Pedro to Guatemala City and then a flight to Flores is long but feasible.\n\nNon-blocking notes:\n- The trip is Guatemala only. The brief's \"several countries\" preference (Belize, Mexico) is not met. The tradeoff is disclosed, and adding those countries would cost roughly $300-500 more.\n- The logistics text says lodging is about $225 and the total is about $1,600. The budget table uses $200 and $1,805. The logistics also says Antigua has 7 nights, while the budget counts 6 real ones. These rounding and counting differences don't change the outcome.\n- Day 12 is described as \"Indian Nose sunrise\", but the \"short hike\" alternative reads as unclear. The Indian Nose is near Santa Clara, so the day is slightly muddled.\n- Days 17, 20 and 21 are empty. Flores has 8 nights, which is a lot, and some of that time could go to Belize day trips (Caracol or Xunantunich). Alternatively, a Semuc Champey or Xela leg could replace some of the idle days.\n- Day 1 says to fly Denver to Guatemala City and arrive in Antigua in the morning. Most Denver itineraries with a connection land in the afternoon, so Day 1 timing is optimistic.\n- The Day 22 flight from Flores to GUA and then on to Denver needs a long connection buffer. Book the Flores flight early in the morning, or consider staying a night in GUA."
+   },
+   "revisions": [
+    [
+     "The brief says countries_wanted 'several' and lists Belize ruins (Xunantunich/Caracol) and Mexico ruins as must-have-style items. This plan has only Guatemala. Budget headroom is about $326, and Flores is about 2-3 hours from the Belize border. Add a Flores to Belize (San Ignacio/Xunantunich) leg, and Mexico if the budget allows, in place of the 7 Flores nights.",
+     "Day count and nights don't match the brief. The itinerary has 22 days (Dec 1-22), but the stays add up to 21 nights. Day 22 is listed with base Antigua, which is fine, but the Day 12 night in Antigua and the Day 21 night in Antigua are separate stays. Confirm that nights per base add up consistently with the dates.",
+     "Flores gets 7 nights, with several empty or filler days (Days 14, 18, 19). Day 3 is labeled base Antigua although the night is spent on the mountain. Replace the filler days with the Belize/Mexico ruins legs.",
+     "Antigua to Flores on Day 13 is a roughly 9-10h trip after a Xela to Antigua day. Fly or split the trip instead. The return Flores to Guatemala City on Day 20 is also a full-day bus. A cheap domestic flight, or a split route via Rio Dulce, may be better. This routing also backtracks through Antigua several times."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     40.7
+    ],
+    [
+     "logistics",
+     7.5
+    ],
+    [
+     "budget",
+     12.4
+    ],
+    [
+     "reviewer",
+     9.0
+    ],
+    [
+     "itinerary",
+     49.0
+    ],
+    [
+     "itinerary",
+     27.6
+    ],
+    [
+     "logistics",
+     8.3
+    ],
+    [
+     "budget",
+     14.5
+    ],
+    [
+     "reviewer",
+     6.7
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 2,
+    "notes": "Biggest miss: the brief asked for several countries and Maya ruins in Belize and/or Mexico, but this is a Guatemala-only loop with no Belize or Mexico stop, even though it has about $195 headroom and Xunantunich is an easy day trip from Flores. Value is good (the line items sum to $1,805 and the $2,000 budget holds), but the Tikal entry and colectivo at $35 and the Acatenango tour at $65 look optimistic, and the Flores stretch carries several empty or rest days."
+   },
+   "cost_usd": 0.4325,
+   "seconds": 223.8
+  },
+  {
+   "id": "student-greek-islands",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.2,
+    "candidates": 23.3,
+    "options": 30.4
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Corfu (Ionian)",
+    "Chania (Crete)",
+    "Naxos (Cyclades)"
+   ],
+   "plan_waits": {
+    "plan_part": 18.4,
+    "plan": 46.7
+   },
+   "plan_total_usd": 592,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip has 9 days and 8 nights from 1 to 9 June 2027, and that matches the brief. Eight hostel nights in Corfu Town line up with the single base. It stays in one country, and there are no impossible transfers. The budget total is $592 against $600, so it fits, but only just.\n\nNon-blocking notes:\n- The logistics text says about $580 total, with $40 for buses and $200 for food. The budget table uses $36 for buses and $150 for food, so the two don't match.\n- The budget's own notes say food could reach $200 and push the trip to about $642. The taverna dinners and rooftop drinks make that likely.\n- The $150 flight is an estimate, and a direct FCO–CFU flight is seasonal. Check that one runs on these dates.\n- Days 4 and 6 both go to the Paleokastritsa area. Combining them would save bus money.\n- Mon Repos and Kanoni are described as beaches, but they are rocky or small, so expect modest swimming.\n- Day 3's \"long empty beach\" is vague."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     18.4
+    ],
+    [
+     "logistics",
+     5.9
+    ],
+    [
+     "budget",
+     14.4
+    ],
+    [
+     "reviewer",
+     7.9
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Fits the brief well: Ionian island, sun and sea, slow pace, dorm beds, one country, under $600 on paper. Value is weakened because the $150 round-trip direct Rome-Corfu flight is unverified (the plan itself says it is seasonal and not guaranteed), and the $8 headroom means any fare above about $160 or a food overrun breaks the budget. Food at $150 for nine days is tight, and the $24/night dorm is optimistic for June Corfu Town. A cheaper option, or a note that Rome-Corfu direct flights may not run in June, would have been more honest."
+   },
+   "cost_usd": 0.1351,
+   "seconds": 82.9
+  },
+  {
+   "id": "vietnam-north-south",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 5.7,
+    "candidates": 24.7,
+    "options": 31.5
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "Hanoi → Ninh Binh → Da Nang/Hoi An → Da Lat Highlands → Ho Chi Minh City",
+    "Hanoi → Phong Nha → Hue → Hai Van Pass → Hoi An → Saigon",
+    "Hanoi → Ha Giang Loop → Ninh Binh → Hoi An → Ho Chi Minh City"
+   ],
+   "plan_waits": {
+    "plan_part": 36.1,
+    "plan": 116.6
+   },
+   "plan_total_usd": 1799,
+   "review": {
+    "approved": false,
+    "issues": [
+     "The stays list says Ninh Binh 2 nights and Hoi An 5 nights, but the itinerary doesn't use those beds. Night 5 (Mar 5) is on the Ninh Binh to Da Nang sleeper and night 10 (Mar 10) is on the Hoi An to Da Lat bus. The real bed nights are Hanoi 3, Ninh Binh 1 (Mar 4), Hoi An 4 (Mar 6-9), Da Lat 4 and HCMC 4, which is 16 beds plus 2 nights in transit. Fix the stays table to 1 and 4 nights and the lodging budget line to 16 beds, or add the missing nights to the itinerary.",
+     "The budget line says '18 nights' of beds ($140). Recompute it for 16 bed nights, about $126. This has no effect on whether the total is under budget."
+    ],
+    "summary": "The trip is mostly sound. It runs Hanoi to Saigon, uses dorms, has a motorbike option, and totals $1,799, which is under the $1,900 budget. The transfers are workable. The flight price is only an estimate and the budget gives the breakeven fare, so I'm not counting that against it. The stays table doesn't match the itinerary's actual nights."
+   },
+   "revisions": [
+    [
+     "Day 6 (Ninh Binh to Hoi An) is impossible as written. It is a ~13-16h trip (about 650 km) described as a daytime sleeper bus or train that arrives late in Da Nang, followed by a transfer to Hoi An. Ninh Binh has limited trains south. Rewrite it as an overnight sleeper bus or train that leaves the evening of Day 5 (or an early train to Da Nang). Alternatively, use a short flight from Hanoi. Then state a concrete arrival time and make the nights line up. The Day 6 'evening: check into the dorm' should match the stay.",
+     "The itinerary gives 5 nights in Hoi An, but the Da Lat transfer on Day 11 is vague ('flight or sleeper bus via Nha Trang'). Commit to one option with a time and cost. The Da Nang-Da Lat flight is mostly indirect or limited, so check that it exists. Otherwise use a sleeper bus on the night of Day 10, which adds a night on the bus.",
+     "The budget lines sum to $1,826, but the 'transport' lines total $163 while the logistics say ~$110. Align the logistics figures with the budget so the headline cost is consistent. The quoted 'lodging ~$145' also differs from the $140 budget line."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     36.1
+    ],
+    [
+     "logistics",
+     7.8
+    ],
+    [
+     "budget",
+     12.2
+    ],
+    [
+     "reviewer",
+     6.9
+    ],
+    [
+     "itinerary",
+     24.9
+    ],
+    [
+     "logistics",
+     8.2
+    ],
+    [
+     "budget",
+     9.1
+    ],
+    [
+     "reviewer",
+     11.3
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 3,
+    "notes": "Costs are sensible for 18 nights of dorms and sleeper transport, with the $1,799 total under $1,900. The main risks are the $1,000 flight estimate (open-jaw one-stop, likely optimistic) and the 3 Hanoi nights, which conflict with the brief's avoid-drizzly-Hanoi note. Motorbike is a single Hai Van day that depends on a licence/IDP the plan has not confirmed, and the trip is light on the adventure and social vibe requested."
+   },
+   "cost_usd": 0.2745,
+   "seconds": 161.2
+  },
+  {
+   "id": "complete-no-questions",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 9.2,
+    "candidates": 28.8,
+    "options": 35.8
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Mazunte & Zipolite coast, Oaxaca",
+    "El Cuco & Costa del Sol, El Salvador",
+    "Las Peñitas & León, Nicaragua"
+   ],
+   "plan_waits": {
+    "plan_part": 26.0,
+    "plan": 45.6
+   },
+   "plan_total_usd": 1285,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The itinerary covers Feb 1-15, 2027 and 14 nights (1 in Huatulco, 13 in Mazunte), and the stays match the day bases. The budget lines add up to $1,285, which is under the $1,400 cap. It is one country with a single beach base. It includes beaches and cheap seafood, and it avoids party areas by visiting Zipolite only as a daytime trip. The transfers are feasible. Flight prices are estimates. Minor nice-to-haves: the Huatulco first night could be skipped by taking a shuttle straight to Mazunte if the flight lands early. The day 15 departure also needs a flight late enough to allow the early shuttle, so check the schedule when booking."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     26.0
+    ],
+    [
+     "logistics",
+     6.3
+    ],
+    [
+     "budget",
+     6.6
+    ],
+    [
+     "reviewer",
+     6.7
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Budget math checks out ($1,285 of $1,400) and Mazunte is a genuinely cheap, quiet base with $3-5 comidas and dorm beds, which fits the brief. The biggest weaknesses: the $520 SEA-HUX flight is an optimistic estimate with no booked fare, the \"transfers\" array is empty even though the budget lists $75 of transfers, and the daily plan is padded with \"empty time\" and \"nothing day\" entries rather than specific beaches or seafood spots."
+   },
+   "cost_usd": 0.1325,
+   "seconds": 86.7
+  },
+  {
+   "id": "too-small-budget",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 7.0,
+    "candidates": 31.8,
+    "options": 43.1
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": false,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "Reykjanes Peninsula (Grindavik) volunteer base",
+    "Akureyri and Lake Myvatn (North Iceland)",
+    "Westfjords (Isafjordur area)"
+   ],
+   "plan_waits": {
+    "plan_part": 28.7,
+    "plan": 104.4
+   },
+   "plan_total_usd": 750,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Budget is $750, which is $150 over the $600 cap. Rebuild the budget so the stated total is at or under $600. Use the cuts the notes already list: $0 lodging, about $8 a day for food, no ride-share, and flights at or below $330. Then make the budget lines, the logistics text and the rough_cost all show the same total. At the moment they show $580, $600 and $750.",
+     "The plan assumes a free volunteer bed for all 21 nights, but the budget still carries 4 paid campsite nights ($60). Pick one lodging assumption. Either show 21 free nights with a confirmed host and a named fallback, or show a paid-night budget that still fits under $600.",
+     "The Krysuvik day relies on a ride-share costing $10, and the budget notes say to skip it. Either drop that day's trip or replace it with a free option, such as a walk or a Straeto bus. Do the same for the Fagradalsfjall hike and other far sites, because the plan doesn't say how you get there without a car. The Stampar walk is also not guaranteed from the base, since the itinerary only says 'where access allows'.",
+     "Transport on days 1 and 22 is vague. Check whether Straeto actually serves Grindavik from KEF, and say which route or transfer to use. The airport bus on day 22 should also be timed to the return flight."
+    ],
+    "summary": "The budget table totals $750 against a $600 cap, and the budget notes say so themselves. The plan as built breaks the brief's \"avoid going over $600\" rule. The itinerary also depends on a volunteer host that isn't confirmed. Dates and the 21-night count match the brief, and the single Grindavik base is consistent across the days."
+   },
+   "revisions": [
+    [
+     "Budget total is $722 and within_budget is false, which is $122 over the $600 cap. Rebuild the budget with the cuts already identified (no campsite nights or campsite transfer, food about $6/day, flight at about $300) so that the total, buffer included, is $600 or less, and set within_budget to true.",
+     "The itinerary still includes the Reykjavik day-trip bus ($25) and campsite nights (days 15-16). Both are cut in the budget notes. Remove or replace them with free options, such as a Reykjanes walk on day 13 and staying in the volunteer bed on day 15, so the itinerary matches the cheaper budget.",
+     "Make the cost figures consistent. The trip summary says $580, the logistics say about $595 and the budget says $722. Use one itemised total in all three places. Food is 22 days at $9, which is $198 in the budget but $165-190 in other sections.",
+     "The whole plan depends on landing a Workaway or Worldpackers host, and the Grindavik evacuation risk is not handled. Add a concrete fallback, such as Keflavik hostel work-exchange or campsite costs, and state plainly that without a host the trip cannot fit in $600."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     28.7
+    ],
+    [
+     "logistics",
+     7.0
+    ],
+    [
+     "budget",
+     13.7
+    ],
+    [
+     "reviewer",
+     9.8
+    ],
+    [
+     "itinerary",
+     22.7
+    ],
+    [
+     "logistics",
+     5.7
+    ],
+    [
+     "budget",
+     10.7
+    ],
+    [
+     "reviewer",
+     6.0
+    ]
+   ],
+   "judge": {
+    "value": 2,
+    "fit": 3,
+    "notes": "The plan itself totals about $750 against a $600 cap, so as written it fails the budget; it only works if every saving lands (a free 21-night volunteer bed, food near $8/day, and a $330 July round-trip fare, which is optimistic for peak season). Grindavik has also been subject to eruption-related evacuations and access restrictions since 2023, so a volunteer base there needs checking before booking, and a North Iceland or other base may be a safer budget pick. Fit is reasonable for nature, budget and scenic, but adventure is thin, with the day list padded by \"empty day\" entries."
+   },
+   "cost_usd": 0.2501,
+   "seconds": 153.7
+  },
+  {
+   "id": "east-africa",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 9.9,
+    "candidates": 27.1,
+    "options": 35.8
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Nairobi + Maasai Mara safari + Diani Beach",
+    "Nairobi safari + Lamu island",
+    "Arusha safari + Zanzibar (Nungwi/Paje)"
+   ],
+   "plan_waits": {
+    "plan_part": 28.5,
+    "plan": 59.3
+   },
+   "plan_total_usd": 1400,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip runs 2027-08-01 to 08-15, which is 15 days and 14 nights. Stays add up to 2 Nairobi, 2 Mara, 1 Nairobi and 9 Diani, and that matches the day-by-day bases. Both must-haves are covered: a 3-day shared Mara join-in and Diani beach time. The budget lines sum to exactly $1,400, so it is within the limit. The Mara-to-Nairobi-to-SGR-to-Diani chain is realistic, and the evening arrival on day 5 leaves time for the morning train. Things to watch, none of them blocking: the budget has no headroom, and a $400 safari would need the cuts already listed in the budget notes. The $430 open-jaw flight in peak August is optimistic, so confirm the fare. The Day 15 flight from Mombasa to Dubai may need a connection, so check timings. The $12 Shimba Hills entry is a rough estimate."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     28.5
+    ],
+    [
+     "logistics",
+     8.0
+    ],
+    [
+     "budget",
+     13.8
+    ],
+    [
+     "reviewer",
+     9.0
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 3,
+    "notes": "The budget sums to exactly $1,400 but rests on an optimistic $360 Mara join-in; non-resident Mara park fees alone are high, so a realistic 2-3 day shared safari is more likely $450-600, which would break the budget with no real headroom. The plan also has only 2 Mara nights while calling it a 3-day join-in, and the $430 open-jaw flight (DXB-NBO, MBA-DXB) and the Kenya eTA fee are thin or missing. Fit is partial: the brief asked for \"several\" countries, but this is Kenya only, and the 9-night Diani stay is heavy on beach relative to the adventurous, safari-led vibe."
+   },
+   "cost_usd": 0.1542,
+   "seconds": 103.7
+  }
+ ]
+}

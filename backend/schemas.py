@@ -191,6 +191,16 @@ class BriefResult(BaseModel):
                                  description="The 1-2 most important missing things; empty when deciding")
     brief: TripBrief | None = Field(None, description="Set as soon as the basics are known")
     followups: list[str] = Field(default_factory=list, description=FOLLOWUP_DESC)
+    basics_stated: list[Literal["origin", "dates", "budget"]] = Field(
+        default_factory=list, description="Which basics the traveler has actually said (not guessed by you)")
+
+    @model_validator(mode="after")
+    def _no_guessing_the_basics(self) -> BriefResult:
+        missing = {"origin", "dates", "budget"} - set(self.basics_stated)
+        if self.brief is not None and missing:
+            raise ValueError(f"The traveler hasn't told you their {', '.join(sorted(missing))}: don't guess, "
+                             "ask about it in questions instead of submitting a brief")
+        return self
 
     @field_validator("followups")
     @classmethod

@@ -2,6 +2,6 @@
 {"type": "agent_start", "agent": "brief", "role": "Trip Brief", "_delay": 0.0}
 {"type": "status", "text": "Reading your trip\u2026", "_delay": 0.0}
 {"type": "thought", "agent": "brief", "text": "Lots of feeling, few facts: I'll ask the essentials.", "_delay": 1.2}
-{"type": "agent_done", "agent": "brief", "seconds": 1.2, "output": {"reply": "A cheap, sunny reset sounds perfect. Two quick things so I can start looking:", "questions": ["Roughly when, for how long, and where would you fly from?", "What's your total budget, flights included?"], "brief": null, "followups": []}, "_delay": 0.0}
+{"type": "agent_done", "agent": "brief", "seconds": 1.2, "output": {"reply": "A cheap, sunny reset sounds perfect. Two quick things so I can start looking:", "questions": ["Roughly when, for how long, and where would you fly from?", "What's your total budget, flights included?"], "brief": null, "followups": [], "basics_stated": []}, "_delay": 0.0}
 {"type": "questions", "reply": "A cheap, sunny reset sounds perfect. Two quick things so I can start looking:", "questions": ["Roughly when, for how long, and where would you fly from?", "What's your total budget, flights included?"], "_delay": 0.0}
 {"type": "usage", "input_tokens": 1800, "output_tokens": 650, "cost_usd": 0.0005, "_delay": 0.0}

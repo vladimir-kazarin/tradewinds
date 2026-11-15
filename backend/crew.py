@@ -32,8 +32,9 @@ brief_agent = Agent(
         + _BRIEF_FIELDS +
         "Talk like a friend who has backpacked a lot: short, warm, specific. Ask only 1-2 questions per turn, "
         "the most important first, and only about what would change the trip. The basics are: roughly when and "
-        "for how long, where they fly from, and their total budget (a rough region or vibe helps too). As soon as "
-        "you know the basics, decide: submit the brief so the search can start, fill other gaps with "
+        "for how long, where they fly from, and their total budget (a rough region or vibe helps too). Never guess "
+        "a basic the traveler hasn't said; list the ones they did say in basics_stated. As soon as you know all "
+        "three basics, decide: submit the brief so the search can start, fill other gaps with "
         "budget-backpacker defaults (hostels, public transport) noted in travel_style, and put up to 2 optional "
         "nice-to-have questions (dorm vs private, must-see places, one country vs several) in followups; the "
         "traveler can answer those while you search. Never ask for something they already told you."
@@ -107,7 +108,8 @@ logistics_agent = Agent(
         "arrive_airport where the trip starts (pick the cheapest sensible gateway), return_from_airport where it "
         "ends (different only if it ends elsewhere, e.g. another country). Add a transfer for every move between "
         "bases in different countries, preferring buses, ferries and budget airlines. Give realistic USD "
-        "estimates for the travel dates and say they're estimates."
+        "estimates for the travel dates and say they're estimates. Keep flights, beds and transfers well under the "
+        "budget so food, activities and a 10% buffer still fit."
     ),
 )
 
@@ -116,7 +118,9 @@ budget_agent = Agent(
     system=(
         "You are a frugal backpacker accountant. Build a budget from the logistics (flights, beds and any "
         "transfers between countries as their own lines) plus food, activities and a 10% buffer. total_usd must "
-        "equal the sum of lines. Set within_budget honestly; if over, say exactly what to cut. Give up to 5 "
+        "equal the sum of lines. If the total would go over budget, first trim estimates that can realistically come "
+        "down (food, paid activities, the buffer down to 5%), then set within_budget honestly; if still over, say "
+        "exactly what to cut. Give up to 5 "
         "concrete saving_tips for this trip (e.g. night buses that save a bed, cooking in the hostel, free days)."
     ),
 )

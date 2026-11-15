@@ -133,8 +133,11 @@ async def _itinerary(ctx: str, brief: TripBrief, option: DestinationOption, emit
 
 
 async def _logistics(ctx: str, brief: TripBrief, option: DestinationOption, itinerary: Itinerary,
-                     emit: Emit, usage: Usage) -> Logistics:
+                     emit: Emit, usage: Usage, review_issues: list[str] | None = None) -> Logistics:
     task = f"{ctx}\n\nItinerary:\n{_j(itinerary)}"
+    if review_issues:
+        task += f"\n\nThe reviewer found these problems with the last plan; fix the ones logistics can fix:" \
+                f"{_issues_text(review_issues)}"
     logistics = await logistics_agent.run(task, emit, usage)
     issues = stay_mismatches(itinerary, logistics, brief.nights) + stay_country_mismatches(option, logistics)
     if issues:
@@ -193,7 +196,7 @@ async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit,
         await emit({"type": "revision", "round": round_ + 1, "issues": review.issues})
         itinerary = await _itinerary(ctx, brief, option, emit, usage, itinerary, review.issues)
         await emit({"type": "plan_part", "part": "itinerary", "itinerary": _dump(itinerary)})
-        logistics = await _logistics(ctx, brief, option, itinerary, emit, usage)
+        logistics = await _logistics(ctx, brief, option, itinerary, emit, usage, review.issues)
         await _emit_logistics(emit, brief, itinerary, logistics)
 
     result = PlanResult(option_name=option.name, itinerary=itinerary, logistics=logistics, budget=budget,

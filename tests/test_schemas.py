@@ -48,9 +48,10 @@ def test_budget_total_must_equal_lines():
 
 def test_brief_result_exactly_one_of_questions_or_brief():
     BriefResult(reply="hi", questions=["When?"])
-    BriefResult(reply="hi", brief=BRIEF)
+    ALL = ["origin", "dates", "budget"]
+    BriefResult(reply="hi", brief=BRIEF, basics_stated=ALL)
     with pytest.raises(ValidationError):
-        BriefResult(reply="hi", questions=["When?"], brief=BRIEF)
+        BriefResult(reply="hi", questions=["When?"], brief=BRIEF, basics_stated=ALL)
     with pytest.raises(ValidationError):
         BriefResult(reply="hi")
 
@@ -67,3 +68,10 @@ def test_extra_saving_tips_are_trimmed_not_rejected():
     b = Budget(lines=[dict(category="a", usd=1)], total_usd=1, within_budget=True, notes="",
                saving_tips=[f"tip {i}" for i in range(8)])
     assert len(b.saving_tips) == 5
+
+
+def test_brief_cannot_decide_without_the_stated_basics():
+    with pytest.raises(ValidationError):
+        BriefResult(reply="ok", brief=BRIEF, basics_stated=["budget"])
+    BriefResult(reply="ok", brief=BRIEF, basics_stated=["origin", "dates", "budget"])
+    BriefResult(reply="q", questions=["Where from?"], basics_stated=[])

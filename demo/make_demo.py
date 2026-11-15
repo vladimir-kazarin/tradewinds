@@ -52,7 +52,7 @@ BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="
              travel_style="Backpacker, slow travel, 2-3 bases max; hostel dorms; local buses and shared shuttles; solo",
              countries_wanted="either")
 DECISION = dict(reply="Two slow, sunny weeks from Boston on about $1,500, with surf lessons and great cheap food.",
-                brief=BRIEF, followups=["Dorms for every night, or a private room now and then?",
+                brief=BRIEF, basics_stated=["origin", "dates", "budget"], followups=["Dorms for every night, or a private room now and then?",
                                         "Anything you'd love to see or do while you're there?"])
 NOTE = "A private room for the last two nights would be lovely if it fits."
 

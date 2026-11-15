@@ -1,0 +1,373 @@
+{
+ "label": "failures-fixed",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 5,
+  "errors": 0,
+  "all_checks_pass_rate": 0.8,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 1.0,
+   "brief_nights": 1.0,
+   "brief_origin": 1.0,
+   "days_and_dates": 1.0,
+   "must_haves_in_options": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 1.0,
+   "reviewer_approved": 0.8,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": 3.0,
+  "judge_fit_avg": 4.0,
+  "cost_usd_total": 0.942,
+  "seconds_avg": 115.1
+ },
+ "results": [
+  {
+   "id": "vague-warm",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 3.8,
+    "candidates": 23.5,
+    "options": 28.0
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Bacalar & Caribbean Mexico (Cancun in, Bacalar lagoon, Tulum edge)",
+    "El Salvador Surf Coast (La Libertad / El Tunco, with San Salvador)",
+    "Colombian Caribbean Coast (Santa Marta, Tayrona and Palomino)"
+   ],
+   "plan_waits": {
+    "plan_part": 23.1,
+    "plan": 43.4
+   },
+   "plan_total_usd": 831,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The plan fits the brief. It runs Jan 10–20, 2027 for 10 nights (4 Tulum, 5 Bacalar, 1 Cancun), and the stays match the day plan. It stays in one country and uses ADO buses and dorms. The budget total is $831, under $900, with about $69 of headroom.\n\nThe transfers work:\n- Day 1 is a Chicago–Cancun flight followed by a roughly 2-hour bus to Tulum. That is feasible if the flight lands by mid-afternoon.\n- The 5–6 hour bus to Cancun happens the day before the flight home, not on a flight day.\n\nMinor, non-blocking notes:\n- Logistics shows a $300 flight and the budget uses $330. Logistics also gives transport as about $75, while its itemized line totals differ slightly. These are small rounding differences.\n- Fares and prices are estimates.\n- Day 1 should note that a late-arriving flight could mean a Cancun overnight instead of Tulum.\n- The \"transfers\" array is empty, but the transfers are described in getting_around.\n- The Tulum-to-Bacalar and Bacalar-to-Cancun fares are likely a bit higher than listed. The buffer covers this."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     23.1
+    ],
+    [
+     "logistics",
+     5.7
+    ],
+    [
+     "budget",
+     9.5
+    ],
+    [
+     "reviewer",
+     5.1
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Biggest risk: the $831 total rests on optimistic inputs. Tulum pueblo dorms at $16/night are unlikely in January peak season (realistic is closer to $25-35), and $330 round trip ORD-CUN excludes the carry-on fees that Spirit/Frontier charge, so the true total could easily exceed $900. Fit is mostly good (warm, cheap, dorms, ADO buses, beach plus lagoon), but it uses three bases (Tulum, Bacalar, Cancun) where the brief asked for one or two, and the plan's transfers list is empty even though the budget includes transfer costs."
+   },
+   "cost_usd": 0.1356,
+   "seconds": 83.7
+  },
+  {
+   "id": "mexico-surf-month",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 9.6,
+    "candidates": 35.3,
+    "options": 41.5
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "must_haves_in_options": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "La Libertad coast (El Tunco / El Zonte)",
+    "San Juan del Sur",
+    "Puerto Escondido (Playa Carrizalillo / La Punta)"
+   ],
+   "plan_waits": {
+    "plan_part": 30.8,
+    "plan": 54.0
+   },
+   "plan_total_usd": 1600,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The dates (1 Jun to 1 Jul 2027) and the 30 nights in El Zonte match the brief and the single stay. The budget lines add up to $1,600, which is within budget. Both must-haves are covered: beginner surf lessons and Spanish classes. Day 1 is realistic: the flight lands in the day and the bus to El Zonte is about an hour. The base is a safe, tourist-oriented surf strip, and the plan advises against travel after dark.\n\nNon-blocking notes:\n- The budget has almost no slack, so a flight fare above $520 would push it over.\n- Day 2 leaves Spanish school booking until after arrival. Booking ahead would be safer.\n- The plan includes only 4 surf lessons.\n- The itinerary is repetitive and has several empty days.\n- El Zonte coordinates are approximate.\n- Surf lessons on days 3, 8 and 22 and the Spanish classes are loosely scheduled."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     30.8
+    ],
+    [
+     "logistics",
+     6.0
+    ],
+    [
+     "budget",
+     13.3
+    ],
+    [
+     "reviewer",
+     4.0
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Biggest miss: the chosen El Salvador option (rough $1,570) is pricier than San Juan del Sur ($1,410) and the plan only reaches $1,600 by squeezing food to $9.35/day, using a $520 flight that looks optimistic for YYZ-SAL in June, and leaving a 5% buffer, so any fare overrun breaks the budget. Fit is good (beginner surf, Spanish, chill beach town, one base), but it cuts surf lessons to 4 and Spanish to about 9 hrs/week, the transfers array is empty, and the plan never addresses the \"avoid unsafe areas\" request for El Salvador."
+   },
+   "cost_usd": 0.1784,
+   "seconds": 102.3
+  },
+  {
+   "id": "couple-private",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 5.8,
+    "candidates": 22.6,
+    "options": 32.1
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Porto & Lisbon",
+    "Lisbon & Arrábida Coast (Sesimbra)",
+    "Valencia & Mediterranean Coast"
+   ],
+   "plan_waits": {
+    "plan_part": 24.1,
+    "plan": 46.2
+   },
+   "plan_total_usd": 2793,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The dates (Oct 1-13, 2027), the 12 nights (6 Porto, 6 Lisbon) and the 2 bases all match the brief. Every stay is a private room, so the no-dorms rule is met. The Porto-to-Lisbon train is a short, workable transfer, and the open-jaw flights avoid backtracking. The budget total of $2,793 is under $2,800, though only by $7. Non-blocking notes: (1) The budget is very thin, and the $1,000 flight figure is an estimate rather than a quote. (2) The budget uses $80/night for lodging, while the stays list shows $75 and $85. This is a rounding difference. (3) Day 1 says an overnight flight arrives that afternoon, but the budget notes say it will likely land on the morning of Oct 2. Check the arrival timing when booking. (4) The food line is $400 for 13 days, which is tight. (5) The logistics text says local transport is $150-200, while the budget line is $150. (6) The weather summary shows 0 rainy days, which is unreliable for October. The packing list does include a rain jacket."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     24.1
+    ],
+    [
+     "logistics",
+     6.4
+    ],
+    [
+     "budget",
+     11.4
+    ],
+    [
+     "reviewer",
+     4.2
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "The budget adds up ($2,660 + $133 buffer = $2,793), but it has only $7 of slack and rests on a $1,000 two-person NYC round-trip flight estimate that is optimistic for October. Porto and Lisbon is also the priciest of the three options, yet the plan picks it over the Lisbon & Sesimbra option, which the brief's own numbers show about $70 cheaper, with no explanation. The Porto-to-Lisbon train is also budgeted at $70 without a quote, and the plan misses that an overnight EWR flight lands Oct 2, so day 1 is a travel day. Fit is good: private rooms, slow two-base travel, food focus and warm dry October weather in Portugal."
+   },
+   "cost_usd": 0.1254,
+   "seconds": 86.8
+  },
+  {
+   "id": "vietnam-north-south",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 4.5,
+    "candidates": 27.0,
+    "options": 38.2
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Slow Coast and Highlands: Hanoi, Ninh Binh, Hoi An, Da Lat, Saigon and the Mekong",
+    "Classic Spine: Hanoi, Ninh Binh, Phong Nha, Hue, Hoi An, Saigon",
+    "Northern Adventure to Central Coast: Hanoi, Ha Giang, Ninh Binh, Hue, Hoi An, Saigon"
+   ],
+   "plan_waits": {
+    "plan_part": 35.1,
+    "plan": 67.4
+   },
+   "plan_total_usd": 1771,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The itinerary runs Mar 1–19, 2027, which is 19 days and 18 nights. The stays add up to 18 nights (3+2+4+4+5) and match the day bases. The budget lines sum to $1,771, under the $1,900 cap. The route is Vietnam only, goes north to south, uses dorm hostels, and has 5 bases. Motorbike use is optional only. No transfer is impossible: the Da Lat to Saigon bus is a 7–8 hour day with nothing else planned, and the Da Nang to Da Lat flight is a reasonable choice over a very long bus.\n\nMinor, non-blocking notes:\n- The Ninh Binh night of Mar 5 is spent on the sleeper train, so only 1 of the 2 budgeted Ninh Binh dorm nights is used. That is about $8 of savings, or the traveler can keep the bed for a late checkout and storing bags.\n- Flight prices are estimates.\n- The day 17 line \"rooftop-free dinner\" is odd wording."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     35.1
+    ],
+    [
+     "logistics",
+     7.5
+    ],
+    [
+     "logistics",
+     5.5
+    ],
+    [
+     "budget",
+     11.1
+    ],
+    [
+     "reviewer",
+     8.1
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Budget math adds up to $1,771 with a 10% buffer, and five dorm bases fit the 4-6 limit. The main weakness is the $120 ground-transport line, which must cover a sleeper train, a Da Nang-Hoi An shuttle, an airport bus, a Da Nang-Da Lat flight, a Da Lat-Saigon bus and the Mekong trip, and is probably $150-200 in practice; Cu Chi tours are also underpriced. Fit is decent (dorms, north-to-south, food, Da Lat canyoning) but adventure is thin, with only one activity and the Ha Giang and Hai Van options dropped, and the plan has several padded \"slow\" days."
+   },
+   "cost_usd": 0.1959,
+   "seconds": 120.6
+  },
+  {
+   "id": "too-small-budget",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 7.4,
+    "candidates": 38.7,
+    "options": 49.6
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "White Mountains, New Hampshire",
+    "Acadia and Downeast Maine",
+    "Quebec City and Quebec's Parks"
+   ],
+   "plan_waits": {
+    "plan_part": 28.0,
+    "plan": 120.3
+   },
+   "plan_total_usd": 591,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Nights don't line up. Stays say North Woodstock 11 nights (6 paid, 5 dispersed) and Pinkham 10 nights. The budget says 4 paid + 7 free at North Woodstock and 4 paid + 6 free at Dolly Copp. Logistics says 15 paid and 6 free, and the budget notes say 8 paid and 13 free. Pick one split and make stays, logistics and budget match. Logistics totals $550 before food, which would break $600 once food is added.",
+     "Dispersed camping is not workable as written. Lincoln Woods and Zealand Road sit in or next to the Pemi Wilderness, and the Dolly Copp/Pinkham area has few legal dispersed spots. Nothing says where the free nights actually are. The budget depends on 13 free nights and has only $9 of headroom. Name specific legal free sites or fall back to a paid-night count that still fits under $600. Also, the itinerary says every night is a paid tent site.",
+     "Day 12 transfer is unreliable. Concord Coach does not run a Lincoln–Littleton–Gorham route. The plan then needs a hitch or taxi from Gorham to Dolly Copp, all with a tent. Replace it with a verified route, such as a bus via Concord or Boston, or a hitch-only fallback. Budget a realistic cost, and pick one base for the stay instead of crossing the mountains.",
+     "Day 14 starts at Pinkham, and Day 22 is a hitch or taxi to Gorham for a bus to Boston. The shuttle/taxi cost is not budgeted. The Pinkham Notch base is also mislabeled, since Dolly Copp is not at Pinkham Notch. Add a taxi/shuttle line and fix the labels."
+    ],
+    "summary": "The trip has the right dates (Jul 1–22) and no flights, and the budget total of $591 is under $600. But the stays, logistics and budget contradict each other, and the plan leans on camping rules that don't hold up."
+   },
+   "revisions": [
+    [
+     "Budget is internally inconsistent. The logistics price every night at about $20, which is $420 for 21 nights. The budget uses $250, and its own notes say the total would then be about $722, over the $600 cap. The $250 relies on unverified free dispersed camping. Rebuild with a defensible lodging cost, for example a mix of named paid sites with real prices plus a specific number of legal free nights, so the worst case stays under $600. Alternatively, cut some nights in paid sites.",
+     "The budget has three different totals: $552 in the budget, $582 in rough_cost, and about $100 for transport in the logistics notes against $100 in the budget lines. rough_cost shows $252 daily spend and $80 transfers, which don't match the budget lines. Reconcile them into one total. Food at $8/day for 22 days with no restaurant meals is tight, and the plan includes pizza dinners.",
+     "Several days are mismatched with reality or too vague. Day 2 is titled 'Flume Gorge' but visits only free paths, since the Flume has an entry fee. Day 18, 'Wild Ammonoosuc to Carter Notch', is a mismatch. The Day 12 transfer from North Woodstock to Gorham relies on hitching along the Kancamagus and Route 16 with no named bus. The Boston bus is vague ('Plymouth or Lincoln'), and the Gorham return is 'bus or shuttle'. Name the Concord Coach stops and schedule. Give a realistic cross-mountain route and cost, and fill the `transfers` list, which is empty.",
+     "Day 14 has a Mt Washington Tuckerman round trip of about 8 hours or more, which is fine. But the plan to pitch camp at a base in Gorham and use the AMC shuttle depends on trailheads (Pinkham Notch, Great Gulf) with no clear access from Gorham. Confirm the shuttle routes, or base at Pinkham Notch or Dolly Copp campground."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     28.0
+    ],
+    [
+     "logistics",
+     5.8
+    ],
+    [
+     "budget",
+     11.1
+    ],
+    [
+     "reviewer",
+     7.5
+    ],
+    [
+     "itinerary",
+     37.1
+    ],
+    [
+     "logistics",
+     11.9
+    ],
+    [
+     "budget",
+     12.0
+    ],
+    [
+     "reviewer",
+     6.9
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Strong fit for outdoors, camping and budget, and the line items do sum to $591. The biggest problems are fragility and unverified assumptions: $8.50/day food is near-grim for 22 days of hiking, the $9 headroom disappears with any fare or site-price miss, and 13 of 21 nights rely on \"legal dispersed\" camping in Pemi/Lincoln Woods/Zealand areas that the plan itself admits may be restricted. The Gorham-to-Boston bus and Lincoln-Gorham hitch are also unconfirmed. A realistic budget would price food at roughly $12-15/day and hold a larger buffer, or drop a week of the trip."
+   },
+   "cost_usd": 0.3065,
+   "seconds": 182.3
+  }
+ ]
+}
