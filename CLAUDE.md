@@ -39,12 +39,13 @@ Env vars: see `.env.example`. `ANTHROPIC_API_KEY` (if unset, both endpoints repl
 ## Architecture
 
 ```
-STEP 1  POST /api/options   chat → Brief ─┬─ questions (one round)
-                                          └─ Scout → Judge → 3 ranked options (rough cost)
-STEP 2  POST /api/plan      brief + option → Itinerary → Logistics → Budget → Reviewer
-                                                 ↑                               │
-                                                 └── revise, MAX_REVISIONS=2 ────┘
+STEP 1  POST /api/options   chat → Brief ─┬─ 1-2 questions (up to 2 rounds)
+                                          └─ brief (+ optional followups) → Scout → candidates → Judge → 3 ranked options
+STEP 2  POST /api/plan      brief + option + notes → Itinerary → Logistics → Budget → Reviewer
+                                                        ↑  plan_part after each      │
+                                                        └─ revise, MAX_REVISIONS=1 ──┘
 ```
+Brief, Judge and Budget run on `TRADEWINDS_LIGHT_MODEL` (Haiku 5.5); Scout, Itinerary, Logistics and Reviewer on `TRADEWINDS_MODEL` (Sonnet 5.5). Each agent sets an `effort` level, the main latency lever.
 
 - **`backend/agent.py`**: the whole runtime. `Agent.run()` loops over model calls with `tool_choice: auto` (Claude Sonnet 5.5 and later reject forced `any`/`tool` with a 400): `SUBMIT_RULE` is appended to every system prompt, a text-only reply gets a nudge to call `submit`, and the last turn is announced. Every agent finishes by calling a synthetic `submit` tool whose `input_schema` is `output.model_json_schema()`. If Pydantic validation fails, the error goes back to the model as an `is_error` tool_result. Real tool calls in a turn run concurrently. Every `tool_use` must get a `tool_result`, including skipped ones.
 - **`backend/schemas.py`**: Pydantic models that serve as the contracts between agents, plus single-model invariants as validators (brief nights = date span, rough cost and budget totals = sum of parts, IATA airport codes, `BriefResult` has questions xor brief). Changing a field changes the submit schema the model sees, the JSON passed downstream, the recordings, and what the frontend renders.
@@ -58,11 +59,12 @@ STEP 2  POST /api/plan      brief + option → Itinerary → Logistics → Budge
 - **`evals/`**: `prompts.jsonl` (20 cases with `expect`), `scoring.py` (pure checks, unit tested), `run_eval.py` (live runner, Haiku 5.5 judge, `--compare`).
 - **`backend/tools.py`**: Open-Meteo tools (geocode, historical climate proxy, live marine). `TOOL_REGISTRY` maps name → (async fn, Anthropic tool schema). `run_tool()` never raises; errors come back as `{"error": ...}` dicts so the model can recover. `mcp_server.py` wraps the same `run_tool` (mcp>=2 `MCPServer` API).
 - **`backend/app.py`**: FastAPI + `sse-starlette`. Live requests pass `_admit` first (daily cap → 503, queue cap / per-IP limit → 429 with a traveler-facing `detail`; demo replays are never limited). POST endpoints validated by `OptionsRequest` / `PlanRequest` (≤8 turns, last from user; plan bodies ≤30k chars, nights 1–60, finite in-range coordinates). 422 responses never echo the input. Live runs log every event to `runs/<ms>.jsonl` with `_delay` (opened only after the semaphore is acquired). Demo replay picks `questions_run` vs `options_run` by whether the transcript has an assistant turn; planning a non-recorded option prepends a "Demo: showing a sample plan" status. `usage` events are log-only. Exceptions reach the browser as a generic friendly `error`.
-- **`frontend/index.html`**: a single file of vanilla JS with vendored Leaflet and fonts. Reads SSE via `fetch` + stream reader (EventSource can't POST) and dispatches on `ev.type`. Escape every model string with `esc()`; links pass through `safeUrl()`. Map tiles come from tile.openstreetmap.org.
+- **`frontend/`**: no build step. `index.html` (landing + app shell), `app.css` (indie backpacker look), `render.js` (pure HTML builders; every model string through `esc()`, links through `safeUrl()`), `app.js` (state replaced via `setState`, SSE over `fetch` since EventSource can't POST, chat/plan flows, notes, map). The app view is chat left + trip canvas right (tabs under 900px). Vendored Leaflet and fonts; tiles from tile.openstreetmap.org (also allowed in the CSP).
+- **Deploy**: `Dockerfile` + `docker-entrypoint.sh` (fixes `/data` volume ownership, runs as uid 10001), `fly.toml` (one machine, `/data` volume for ledger and run logs), `.github/workflows/ci.yml` (tests, offline integration test, docker build, deploy from main with `FLY_API_TOKEN`). See `DEPLOY.md`.
 
 ### Event protocol
 
-`run_start {step, agents}`, `agent_start`, `agent_done`, `agent_skip` (step 2 marks Brief/Scout/Judge done), `status {text}`, `questions {reply, questions}`, `options {reply, brief, options:[{option, pitch, best}]}`, `plan {option_name, itinerary, logistics, budget, review, links}`, `revision`, `agent_error`, `error`, and `usage` (log only, never streamed). `thought`, `tool_call` and `tool_result` are still emitted and recorded but the UI ignores them. Backend, the frontend handlers and the recordings must stay in sync; regenerate the demo after any change.
+`run_start {step, agents}`, `agent_start`, `agent_done`, `agent_skip` (step 2 marks Brief/Scout/Judge done), `status {text}`, `questions {reply, questions}` (terminal), `brief {reply, brief, followups}` (search started; the UI shows the summary and keeps the chat open, later messages become plan `notes`), `candidates {options}` (Scout's 3, before ranking), `options {reply, brief, options:[{option, pitch, best}]}` (terminal), `plan_part {part: itinerary|logistics|budget, ...}` (re-sent after a revision; logistics carries `links`), `plan {option_name, itinerary, logistics, budget, review, links}` (terminal), `revision`, `agent_error`, `error` (terminal), and `usage` (log only, never streamed). `thought`, `tool_call` and `tool_result` are emitted and recorded but the UI ignores them. Backend, `frontend/app.js` handlers and the recordings must stay in sync; regenerate the demo after any change.
 
 ### Demo script coupling
 

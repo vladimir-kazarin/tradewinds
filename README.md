@@ -27,17 +27,17 @@ python evals/run_eval.py --compare evals/results/A.json evals/results/B.json
 
 All settings are listed in `.env.example`: the model, spend caps (per run, per day), per-IP hourly limits, the queue cap, `TRADEWINDS_TRUST_PROXY` for Fly.io, and optional Langfuse keys for tracing.
 
+## How it feels
+
+Like chatting with a friend who has backpacked everywhere. It asks one or two questions at a time, and as soon as it knows the basics (roughly when, from where, budget) it starts searching while you keep chatting: the trip summary appears in seconds, three candidate trips about 25 seconds later, ranked for value about 10 seconds after that. Pick one and the day-by-day plan streams in piece by piece (itinerary, then flights and beds, then costs), reviewed in about 50 seconds. Anything you add in the chat meanwhile ("dorms are fine", "I'd love a cooking class") is folded into the plan.
+
 ## Architecture
 
 ```
- STEP 1 · POST /api/options                         STEP 2 · POST /api/plan (per card, on click)
- chat ─► Brief ─┬─► Scout ─► Judge ─► 3 options     brief + option ─► Itinerary ─► Logistics
-                │   geocode,  rank,   rough cost                       geocode,     stays per base
-                │   climate   pitch                                    ocean           │
-                └─► questions (one round max)                                          ▼
-                                                                   Budget ─► Reviewer ─┐
-                                                                      ▲   revise ≤ 2   │
-                                                                      └────────────────┘
+ STEP 1 · POST /api/options                               STEP 2 · POST /api/plan (on click)
+ chat ─► Brief ─┬─► brief ─► Scout ─► candidates ─► Judge ─► 3 options    brief + option + notes ─► Itinerary ─► Logistics ─► Budget ─► Reviewer
+   (Haiku)      │            (Sonnet)               (Haiku)                                         (Sonnet)     (Sonnet)     (Haiku)   (Sonnet)
+                └─► 1-2 questions (up to 2 rounds)                                      each part streams to the UI as it finishes; one revision max
 ```
 
 The browser carries the brief and the chosen option between the two calls, so the server keeps no session.
@@ -57,7 +57,8 @@ The browser carries the brief and the chosen option between the two calls, so th
 | Limits | `backend/limits.py` | Per-IP hourly rate limits, a queue cap, a per-run cost cap and a daily spend cap, so a public key can't be drained. |
 | Tracing | `backend/tracing.py` | Langfuse: a trace per run, grouped by the traveler's session, with an agent observation per helper, a generation per model call (usage and cost) and a tool observation per tool call. Off without keys. |
 | Evals | `evals/` | 20 backpacker prompts with expected facts, deterministic checks, an optional Claude Haiku 5.5 value judge, and run-to-run comparison. |
-| UI | `frontend/index.html` | One page, vanilla JS: ask, follow-up chat, globe with crew ring, three cards, planned trip with map, budget and booking links. |
+| UI | `frontend/` | Vanilla JS modules, no build: landing, chat + trip canvas, crew ring, ticket-style cards, progressive plan with map, booking links, costs and saving tips. |
+| Deploy | `Dockerfile`, `fly.toml`, `DEPLOY.md` | One Fly machine with a `/data` volume, security headers, CI that tests, builds and deploys from `main`. |
 
 ## Design decisions
 
@@ -65,4 +66,5 @@ The browser carries the brief and the chosen option between the two calls, so th
 - **Why a fixed pipeline and not an LLM router?** The order of steps is known in advance, so code handles control flow and the model handles judgment. Runs are cheaper, more predictable and easier to evaluate.
 - **Why options first, plan on click?** Planning three trips fully would triple the cost and the wait. A rough cost per option is enough to choose; the full plan replaces it.
 - **Why code for links, checks and status?** Anything that has to be exactly right (URLs, sums, matching towns) is computed or checked in code rather than trusted to the model.
-- **Next steps:** deploy to Fly.io, prompt caching on the agents' system prompts, real flight prices instead of model estimates (the eval judge flags optimistic fares), and saved/shareable trips.
+- **Why two model tiers?** Brief, Judge and Budget are well-specified (extraction, scoring, arithmetic), so Haiku 5.5 does them fast and cheaply; finding places, planning days, pricing logistics and reviewing stay on Sonnet 5.5. Measured on the eval: about $0.14 per search + plan, down from $0.60.
+- **Next steps:** deploy (see `DEPLOY.md`), a map tile provider for real traffic, real flight prices instead of model estimates (the eval judge still flags optimistic fares), prompt caching, and saved/shareable trips.
