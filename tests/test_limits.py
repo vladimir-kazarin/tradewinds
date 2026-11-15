@@ -84,3 +84,13 @@ def test_slots_reserve_synchronously_and_release_once():
     a.release()
     a.release()  # idempotent
     assert slots.in_use == 1 and slots.try_reserve() is not None
+
+
+def test_per_ip_daily_spend_is_capped_separately():
+    from limits import DailyBudgetExhausted, IpSpend
+    per_ip = IpSpend(daily_limit_usd=0.05)
+    usage = Usage(model="claude-sonnet-5-5", ledger=SpendLedger(daily_limit_usd=100), ip_ledger=per_ip.ledger("1.1.1.1"))
+    usage.add(NS(input_tokens=10_000, output_tokens=1_000))
+    with pytest.raises(DailyBudgetExhausted):
+        usage.add(NS(input_tokens=10_000, output_tokens=1_000))
+    assert per_ip.exhausted("1.1.1.1") and not per_ip.exhausted("2.2.2.2")

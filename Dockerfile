@@ -18,4 +18,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && mkdir -p /data && chown app:
 WORKDIR /app/backend
 EXPOSE 8080
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-server-header"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-server-header", "--timeout-graceful-shutdown", "20"]

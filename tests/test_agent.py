@@ -90,3 +90,40 @@ def test_cancelled_call_is_charged_an_estimate(monkeypatch):
     except asyncio.CancelledError:
         pass
     assert ledger.spent_today() > 0
+
+
+def test_tool_calls_per_turn_are_capped(monkeypatch):
+    calls = [NS(type="tool_use", id=f"g{i}", name="geocode", input={"place": f"p{i}"}) for i in range(20)]
+    submit = NS(type="tool_use", id="s1", name="submit", input={"answer": "hi"})
+    ran = []
+
+    async def fake_tool(name, args):
+        ran.append(args["place"])
+        return {"ok": True}
+
+    monkeypatch.setattr(agent_mod, "run_tool", fake_tool)
+    out, sent = _run(monkeypatch, [_resp(*calls), _resp(submit)])
+    assert len(ran) == agent_mod.MAX_TOOL_CALLS_PER_TURN
+    results = sent[1]["messages"][-1]["content"]
+    assert len([r for r in results if r.get("type") == "tool_result"]) == 20  # every tool_use still answered
+
+
+def test_api_errors_reach_ui_without_raw_details(monkeypatch):
+    import anthropic, httpx2 as httpx
+
+    class Boom:
+        async def create(self, **kwargs):
+            raise anthropic.APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"))
+
+    monkeypatch.setattr(agent_mod, "_client", NS(messages=Boom()))
+    events = []
+
+    async def emit(ev):
+        events.append(ev)
+
+    try:
+        asyncio.run(Agent(name="t", role="T", system="s", output=Out).run("x", emit, Usage()))
+    except anthropic.APIConnectionError:
+        pass
+    err = next(e for e in events if e["type"] == "agent_error")
+    assert "api.anthropic.com" not in err["message"]

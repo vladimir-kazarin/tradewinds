@@ -28,7 +28,8 @@ from sse_starlette.sse import EventSourceResponse
 
 import tracing
 from agent import Emit, Usage
-from limits import DailyBudgetExhausted, RateLimiter, Reservation, RunBudgetExceeded, Slots, SpendLedger
+from limits import (DailyBudgetExhausted, IpBudgetExhausted, IpSpend, RateLimiter, Reservation, RunBudgetExceeded,
+                    Slots, SpendLedger)
 from pipeline import plan_options, plan_trip
 from schemas import ChatTurn, DestinationOption, TripBrief
 
@@ -44,6 +45,7 @@ DEMO_NOTE = {"type": "status", "text": "Demo: showing a sample plan"}
 FRIENDLY_ERROR = "Something went wrong planning this. Please try again."
 TOO_BIG_ERROR = "This trip got too big to plan in one go. Try a shorter or simpler trip."
 DAILY_LIMIT_MSG = "Tradewinds has reached today's planning limit. Please come back tomorrow."
+IP_LIMIT_MSG = "You've used today's planning allowance. Please come back tomorrow."
 BUSY_MSG = "Lots of travelers are planning right now. Please try again in a minute."
 BUSY_RETRY_S = 30
 HOUR_S = 3600
@@ -94,6 +96,8 @@ OPTIONS_LIMITER = RateLimiter(int(os.getenv("TRADEWINDS_OPTIONS_PER_HOUR", "20")
 PLAN_LIMITER = RateLimiter(int(os.getenv("TRADEWINDS_PLANS_PER_HOUR", "10")), HOUR_S)
 TRUST_PROXY = os.getenv("TRADEWINDS_TRUST_PROXY") == "1"  # set on Fly.io, where Fly-Client-IP is reliable
 SLOTS = Slots(MAX_CONCURRENT + MAX_QUEUE)
+IP_SPEND = IpSpend(float(os.getenv("TRADEWINDS_IP_DAILY_BUDGET_USD", "3")))
+HIDDEN_EVENTS = {"thought", "tool_call", "tool_result"}  # recorded for us, not for travelers
 IPV6_PREFIX = 64  # one person usually controls a whole /64
 
 @asynccontextmanager
@@ -181,6 +185,8 @@ def _admit(request: Request, limiter: RateLimiter) -> Reservation | JSONResponse
     if LEDGER.exhausted():
         return JSONResponse(status_code=503, content={"detail": DAILY_LIMIT_MSG})
     ip = _client_ip(request)
+    if IP_SPEND.exhausted(ip):
+        return JSONResponse(status_code=429, content={"detail": IP_LIMIT_MSG})
     if not limiter.allow(ip):
         wait = limiter.retry_after(ip)
         minutes = max(1, round(wait / 60))
@@ -190,7 +196,20 @@ def _admit(request: Request, limiter: RateLimiter) -> Reservation | JSONResponse
     if reservation is None:
         return JSONResponse(status_code=429, content={"detail": BUSY_MSG},
                             headers={"Retry-After": str(BUSY_RETRY_S)})
+    reservation.ip = ip
     return reservation
+
+
+def _for_browser(ev: dict) -> dict | None:
+    """Strip what travelers never see: tool traffic, thoughts, full agent outputs, raw API errors."""
+    kind = ev.get("type")
+    if kind in LOG_ONLY or kind in HIDDEN_EVENTS:
+        return None
+    if kind == "agent_done":
+        return {k: v for k, v in ev.items() if k != "output"}
+    if kind == "agent_error":
+        return {"type": "agent_error", "agent": ev.get("agent")}
+    return ev
 
 
 async def _replay(path: Path, speed: float, prelude: list[dict] | None = None) -> AsyncIterator[dict]:
@@ -199,8 +218,9 @@ async def _replay(path: Path, speed: float, prelude: list[dict] | None = None) -
     for line in path.read_text().splitlines():
         ev = json.loads(line)
         await asyncio.sleep(ev.pop("_delay", 0.4) / speed)
-        if ev["type"] not in LOG_ONLY:
-            yield {"data": json.dumps(ev)}
+        shown = _for_browser(ev)
+        if shown is not None:
+            yield {"data": json.dumps(shown)}
 
 
 Run = Callable[[Emit, Usage], Awaitable[Any]]
@@ -218,7 +238,7 @@ async def _live(run: Run, trace: TraceInfo, reservation: Reservation) -> AsyncIt
 
     async def worker() -> None:
         try:
-            await _run_logged(run, q, trace)
+            await _run_logged(run, q, trace, IP_SPEND.ledger(getattr(reservation, "ip", "unknown")))
         except Exception:  # anything outside the run itself (log file, disk): still tell the browser
             log.exception("run setup failed")
             await q.put({"type": "error", "message": FRIENDLY_ERROR})
@@ -235,7 +255,7 @@ async def _live(run: Run, trace: TraceInfo, reservation: Reservation) -> AsyncIt
         reservation.release()
 
 
-async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo) -> None:
+async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo, ip_ledger: SpendLedger | None = None) -> None:
     async with _live_slots:
         if LEDGER.exhausted():  # the cap may have been reached while this run was queued
             await q.put({"type": "error", "message": DAILY_LIMIT_MSG})
@@ -252,14 +272,19 @@ async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo) -> None:
                 last = now
                 if ev["type"] in TERMINAL:
                     root.update(output=ev)
-                if ev["type"] not in LOG_ONLY:
-                    await q.put(ev)
+                shown = _for_browser(ev)
+                if shown is not None:
+                    await q.put(shown)
 
-            usage = Usage(budget_usd=RUN_BUDGET_USD, ledger=LEDGER)
+            usage = Usage(budget_usd=RUN_BUDGET_USD, ledger=LEDGER, ip_ledger=ip_ledger)
             try:
                 with tracing.run_trace(trace.name, input=trace.input, session_id=trace.session_id,
                                        metadata={"run_log": f.name.rsplit("/", 1)[-1]}) as root:
                     await run(emit, usage)
+            except IpBudgetExhausted as e:
+                f.write(json.dumps({"type": "error", "message": str(e)}) + "\n")
+                log.warning("run stopped: %s", e)
+                await q.put({"type": "error", "message": IP_LIMIT_MSG})
             except DailyBudgetExhausted as e:
                 f.write(json.dumps({"type": "error", "message": str(e)}) + "\n")
                 log.warning("run stopped: %s", e)

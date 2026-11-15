@@ -88,7 +88,7 @@ export function ticketsHTML(entries, { nights, selected, plans, busy, ranked }) 
 }
 
 export function dayHTML(d) {
-  return `<details class="day"><summary><span class="dn">Day ${d.day}</span>
+  return `<details class="day" data-day="${Number(d.day)}"><summary><span class="dn">Day ${d.day}</span>
     <span class="dt">${esc(d.title)}<small>${esc(shortDate(d.date))} · ${esc(d.base)}, ${esc(d.country)} · ${esc(d.pace)}</small></span></summary>
     <div class="parts"><p><b>Morning</b><br>${esc(d.morning)}</p><p><b>Afternoon</b><br>${esc(d.afternoon)}</p><p><b>Evening</b><br>${esc(d.evening)}</p></div></details>`;
 }

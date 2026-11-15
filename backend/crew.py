@@ -5,7 +5,7 @@ Judge; step 2 (plan one option) uses Itinerary, Logistics, Budget and Reviewer.
 Light, well-specified work (Brief, Judge, Budget) runs on LIGHT_MODEL; finding places,
 planning days, pricing logistics and reviewing stay on the main MODEL.
 `brief_decide_agent` is the Brief's second-round form: its output has no room
-for questions, which is how the one-question-round rule is enforced.
+for questions, which is how the question-round limit is enforced.
 """
 from __future__ import annotations
 

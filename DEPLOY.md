@@ -42,3 +42,12 @@ Also set a monthly spend limit on the Anthropic key in the Anthropic Console as 
 - **Map tiles:** the app uses tile.openstreetmap.org, whose usage policy doesn't allow heavy traffic. Switch to a
   tile provider (MapTiler, Stadia, Thunderforest) in `frontend/app.js` (`TILES`) and the CSP `img-src` in `backend/app.py`.
 - **Privacy:** traces and run logs contain what travelers type. The footer says so; add a privacy page if you collect more.
+
+## Deploys and running trips
+
+A deploy restarts the one machine. uvicorn gets 20 seconds (`--timeout-graceful-shutdown`) to let open streams finish,
+within Fly's 60-second `kill_timeout`; anything still running after that is dropped, and the traveler sees "Try again".
+Deploy at quiet times. Spend already made is on the volume's ledger, so caps survive the restart.
+
+Each visitor (IP, IPv6 /64) can spend at most `TRADEWINDS_IP_DAILY_BUDGET_USD` (default $3, about 20 searches with plans)
+per UTC day, so one person can't use up the site-wide `TRADEWINDS_DAILY_BUDGET_USD`.

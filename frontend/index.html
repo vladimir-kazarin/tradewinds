@@ -44,18 +44,19 @@
   </section>
 
   <div class="tabs" id="tabs" hidden role="tablist">
-    <button role="tab" data-tab="chat" aria-selected="true">Chat</button>
-    <button role="tab" data-tab="trips" aria-selected="false">Trips<span class="dot" id="trips-dot" hidden></span></button>
+    <button role="tab" data-tab="chat" aria-selected="true" aria-controls="v-app">Chat</button>
+    <button role="tab" data-tab="trips" aria-selected="false" aria-controls="canvas">Trips<span class="dot" id="trips-dot" hidden></span></button>
   </div>
   <section class="shell" id="v-app" data-tab="chat" hidden>
     <div class="pane chat">
-      <div class="thread" id="thread" aria-live="polite"></div>
+      <div class="thread" id="thread" role="log" aria-label="Conversation"></div>
+      <div class="sr-only" id="live" aria-live="polite"></div>
       <form class="composer" id="chat-form">
         <input id="chat-input" maxlength="500" autocomplete="off" placeholder="Type your answer…" aria-label="Your message" />
         <button class="send" aria-label="Send">→</button>
       </form>
     </div>
-    <div class="pane canvas" id="canvas"></div>
+    <div class="pane canvas" id="canvas" role="tabpanel" aria-label="Trips"><div id="canvas-top"></div><div id="canvas-plan"></div></div>
   </section>
 </main>
 

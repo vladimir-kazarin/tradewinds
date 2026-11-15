@@ -3,7 +3,7 @@
 app = "tradewinds"
 primary_region = "iad"
 kill_signal = "SIGINT"
-kill_timeout = "30s"
+kill_timeout = "60s"  # uvicorn gets 20s to finish streams, then the rest for cleanup
 
 [build]
   dockerfile = "Dockerfile"
@@ -25,7 +25,7 @@ kill_timeout = "30s"
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = "stop"   # with min_machines_running = 1 the single machine stays up
   auto_start_machines = true
   min_machines_running = 1
 

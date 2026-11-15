@@ -71,6 +71,7 @@ a { color: var(--forest); }
 .thread { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
 .chat .composer { margin: 10px 12px 12px; box-shadow: 3px 3px 0 var(--ink); }
 .canvas { overflow-y: auto; padding: 20px 22px 28px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .tabs { display: none; }
 @media (max-width: 899px) {
   .shell { grid-template-columns: 1fr; height: auto; padding: 0 12px 12px; }

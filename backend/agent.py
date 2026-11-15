@@ -22,7 +22,7 @@ from anthropic import AsyncAnthropic, APIStatusError, APIConnectionError
 from pydantic import BaseModel, ValidationError
 
 import tracing
-from limits import DailyBudgetExhausted, RunBudgetExceeded, SpendLedger, cost_usd
+from limits import DailyBudgetExhausted, IpBudgetExhausted, RunBudgetExceeded, SpendLedger, cost_usd
 from tools import TOOL_REGISTRY, run_tool
 
 T = TypeVar("T", bound=BaseModel)
@@ -32,6 +32,7 @@ MODEL = os.getenv("TRADEWINDS_MODEL", "claude-sonnet-5-5")  # judgment-heavy age
 LIGHT_MODEL = os.getenv("TRADEWINDS_LIGHT_MODEL", "claude-haiku-5-5")  # extraction, scoring, arithmetic
 SUBMIT_RULE = ("\n\nWhen you are done, call the `submit` tool exactly once with your final answer. "
                "Never finish with a text-only reply: your work only counts when it arrives through `submit`.")
+MAX_TOOL_CALLS_PER_TURN = 8  # a prompt can't make one turn fan out into a burst of HTTP calls
 CHARS_PER_TOKEN = 4  # rough estimate, only used to charge a cancelled call
 NUDGE = "You replied without calling a tool. Call the `submit` tool now with your final answer."
 FINAL_TURN = "This is your final turn: call the `submit` tool now with your best final answer."
@@ -51,6 +52,7 @@ class Usage:
     model: str = MODEL
     budget_usd: float | None = None
     ledger: SpendLedger | None = None
+    ip_ledger: SpendLedger | None = None  # this visitor's share of today's spend
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0
@@ -64,6 +66,10 @@ class Usage:
             self.ledger.add(delta)
             if self.ledger.exhausted():
                 raise DailyBudgetExhausted(f"daily spend ${self.ledger.spent_today():.2f} reached its cap")
+        if self.ip_ledger is not None:
+            self.ip_ledger.add(delta)
+            if self.ip_ledger.exhausted():
+                raise IpBudgetExhausted(f"visitor spend ${self.ip_ledger.spent_today():.2f} reached its daily cap")
         if self.budget_usd is not None and self.cost_usd > self.budget_usd:
             raise RunBudgetExceeded(f"run spent ${self.cost_usd:.3f}, cap is ${self.budget_usd:.2f}")
 
@@ -107,7 +113,7 @@ class Agent(Generic[T]):
                     tools=tools, tool_choice={"type": "auto"}, messages=messages, **extra,
                 )
             except (APIStatusError, APIConnectionError) as e:
-                await emit({"type": "agent_error", "agent": self.name, "message": str(e)})
+                await emit({"type": "agent_error", "agent": self.name, "message": type(e).__name__})
                 raise
             except asyncio.CancelledError:
                 # The request may still be billed; charge a conservative estimate so the daily cap sees it.
@@ -165,7 +171,7 @@ class Agent(Generic[T]):
                                     "content": f"Validation failed, fix and resubmit:\n{e}"})
 
             # Run real tool calls concurrently.
-            real = [c for c in calls if c.name != "submit"]
+            real = [c for c in calls if c.name != "submit"][:MAX_TOOL_CALLS_PER_TURN]
             for c in real:
                 await emit({"type": "tool_call", "agent": self.name, "tool": c.name, "input": c.input})
             outs = await asyncio.gather(*(self._run_tool(c) for c in real))

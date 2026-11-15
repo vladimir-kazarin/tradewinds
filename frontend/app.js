@@ -8,6 +8,7 @@ const QS = new URLSearchParams(location.search).get("demo") ? "?demo=1" : "";
 const FALLBACK_ERROR = "Something went wrong. Please try again.";
 const TERMINAL = new Set(["questions", "options", "plan", "error"]);
 const MAX_NOTES = 5;
+const MAX_TURN_CHARS = 1000; // matches the server's ChatTurn limit
 const TILES = { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: "&copy; OpenStreetMap contributors" };
 const newSessionId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
@@ -99,12 +100,13 @@ function addNote(text) {
 function runOptions() {
   controller = new AbortController();
   setState({ searching: true, typing: true, chatError: "" });
-  const messages = state.turns.filter(t => t.kind !== "note").map(t => ({ role: t.role, text: t.text }));
+  // Only the real Q&A goes to the server: notes and the app's own status messages stay local.
+  const messages = state.turns.filter(t => !t.kind).map(t => ({ role: t.role, text: t.text.slice(0, MAX_TURN_CHARS) }));
   streamSSE("/api/options" + QS, { messages, session_id: state.session }, onOptionsEvent, controller.signal);
 }
 
-function say(html, text) {
-  return [...state.turns, { role: "assistant", html, text }];
+function say(html, text, kind) {
+  return [...state.turns, { role: "assistant", html, text, ...(kind ? { kind } : {}) }];
 }
 
 function onOptionsEvent(ev) {
@@ -115,17 +117,19 @@ function onOptionsEvent(ev) {
       break;
     case "brief":
       setState({ typing: false, brief: ev.brief, reply: ev.reply, crewFor: "options", tripsDot: state.tab === "chat",
-        turns: say(assistantHTML(ev.reply, ev.followups, ev.followups.length ? "While I search, if you like:" : ""), ev.reply) });
+        turns: say(assistantHTML(ev.reply, ev.followups, ev.followups.length ? "While I search, if you like:" : ""), ev.reply, "local") });
       break;
     case "candidates":
-      setState({ candidates: ev.options.map(o => ({ option: o, pitch: o.why, best: false })), tab: "trips", tripsDot: false });
+      setState({ candidates: ev.options.map(o => ({ option: o, pitch: o.why, best: false })), tripsDot: state.tab === "chat" });
       break;
     case "options":
       setState({ searching: false, crewFor: null, options: ev.options, candidates: [],
-        turns: say(`Here are three best-value trips. Pick one and I'll plan it day by day.`, "") });
+        turns: say(`Here are three best-value trips. Pick one and I'll plan it day by day.`, "", "local") });
       break;
     case "error":
-      setState({ searching: false, typing: false, crewFor: null, chatError: ev.message || FALLBACK_ERROR });
+      // If the search had already started, step back to the last real question so "Try again" resends it.
+      setState({ searching: false, typing: false, crewFor: null, chatError: ev.message || FALLBACK_ERROR,
+        brief: null, reply: "", candidates: [], options: [], turns: state.turns.filter(t => t.kind !== "local") });
       break;
   }
 }
@@ -177,9 +181,15 @@ function render() {
   $("#trips-dot").hidden = !state.tripsDot;
 }
 
+let lastSpoken = 0;
 function renderChat() {
   const thread = $("#thread");
   thread.innerHTML = threadHTML(state.turns, { typing: state.typing, error: state.chatError });
+  if (state.turns.length > lastSpoken) { // announce only the newest message to screen readers
+    const t = state.turns[state.turns.length - 1];
+    if (t.role === "assistant" && t.text) $("#live").textContent = t.text;
+    lastSpoken = state.turns.length;
+  }
   thread.scrollTop = thread.scrollHeight;
   const input = $("#chat-input");
   const blocked = state.searching && !decided();
@@ -188,11 +198,13 @@ function renderChat() {
   input.placeholder = decided() ? "Add anything else (dorms, must-sees, pace)…" : "Type your answer…";
 }
 
+let planSignature = "";
 function renderCanvas() {
-  const canvas = $("#canvas");
+  const top = $("#canvas-top");
   const parts = [];
   if (!state.brief && state.crewFor === null) {
-    canvas.innerHTML = emptyCanvasHTML();
+    top.innerHTML = emptyCanvasHTML();
+    renderPlan(null);
     return;
   }
   parts.push(summaryHTML(state.brief, state.reply));
@@ -210,16 +222,23 @@ function renderCanvas() {
     parts.push(`<div class="banner" style="margin-top:14px"><span>${esc(state.planError.message)}</span>
       <button class="btn ghost small" data-action="retry-plan">Try again</button></div>`);
   }
-  if (state.selected !== null && state.plans[state.selected]) {
-    const p = state.plans[state.selected];
-    if (state.crewFor === state.selected) parts.push(`<div style="margin-top:18px">${crewHTML(state.agents, state.crew, state.status)}</div>`);
-    const notesPending = p.final && state.notes.length > (p.notesUsed || 0) && state.planning === null;
-    parts.push(planHTML(p, { notesPending }));
+  if (state.selected !== null && state.crewFor === state.selected) {
+    parts.push(`<div style="margin-top:18px">${crewHTML(state.agents, state.crew, state.status)}</div>`);
   }
-  const keepScroll = canvas.scrollTop;
-  canvas.innerHTML = parts.join("");
-  canvas.scrollTop = keepScroll;
-  const p = state.selected !== null ? state.plans[state.selected] : null;
+  top.innerHTML = parts.join("");
+  renderPlan(state.selected !== null ? state.plans[state.selected] || null : null);
+}
+
+// The plan region is rebuilt only when the plan itself changes, so open days and the map survive status updates.
+function renderPlan(p) {
+  const region = $("#canvas-plan");
+  const notesPending = Boolean(p && p.final && state.notes.length > (p.notesUsed || 0) && state.planning === null);
+  const signature = p ? JSON.stringify([state.selected, p.note, p.itinerary, p.links, p.budget, p.final, p.review, notesPending]) : "";
+  if (signature === planSignature) return;
+  planSignature = signature;
+  const open = new Set([...region.querySelectorAll("details.day[open]")].map(d => d.dataset.day));
+  region.innerHTML = p ? planHTML(p, { notesPending }) : "";
+  region.querySelectorAll("details.day").forEach(d => { if (open.has(d.dataset.day)) d.open = true; });
   drawMap(p && p.itinerary ? p.itinerary.days : null);
 }
 
@@ -263,6 +282,9 @@ function restart() {
   if (controller) controller.abort();
   if (map) { map.remove(); map = null; }
   state = INITIAL;
+  planSignature = "";
+  lastSpoken = 0;
+  render();
   $("#v-landing").hidden = false;
   $("#footer").hidden = false;
   $("#v-app").hidden = true;

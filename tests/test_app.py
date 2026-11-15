@@ -295,3 +295,19 @@ def test_old_run_logs_are_pruned(tmp_path):
     app.prune_run_logs(tmp_path, keep=3)
     assert sorted(p.name for p in tmp_path.glob("*.jsonl")) == ["4.jsonl", "5.jsonl", "6.jsonl"]
     assert (tmp_path / "spend-ledger.json").exists()
+
+
+def test_ip_over_its_daily_spend_is_refused(monkeypatch):
+    import app
+    from limits import IpSpend, RateLimiter
+    per_ip = IpSpend(daily_limit_usd=0.01)
+    per_ip.ledger("9.9.9.9").add(0.5)
+    monkeypatch.setattr(app, "IP_SPEND", per_ip)
+    r = app._admit(_req(), RateLimiter(limit=100, window_s=3600))
+    assert isinstance(r, app.JSONResponse) and r.status_code == 429
+
+
+def test_internal_payloads_never_reach_the_browser(client):
+    evs = _events(client.post("/api/options?speed=100", json=ANSWERED))
+    assert not any(e["type"] in ("thought", "tool_call", "tool_result") for e in evs)
+    assert not any("output" in e for e in evs if e["type"] == "agent_done")

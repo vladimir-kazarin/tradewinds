@@ -36,12 +36,17 @@ class DailyBudgetExhausted(RuntimeError):
     """The site's daily spend cap was reached; every live run stops."""
 
 
+class IpBudgetExhausted(DailyBudgetExhausted):
+    """One visitor used their share of today's spend; others are unaffected."""
+
+
 class Reservation:
     """One admitted live run. Release exactly once, however the run ends."""
 
     def __init__(self, slots: Slots) -> None:
         self._slots = slots
         self._released = False
+        self.ip = "unknown"  # set at admission; keys the per-visitor spend
 
     def release(self) -> None:
         if not self._released:
@@ -150,3 +155,23 @@ class SpendLedger:
 
     def exhausted(self) -> bool:
         return self.spent_today() >= self.daily_limit_usd
+
+
+class IpSpend:
+    """Per-visitor daily spend, so one person can't use up the whole site's daily cap."""
+
+    def __init__(self, daily_limit_usd: float, today: Callable[[], date] = _utc_today) -> None:
+        self.daily_limit_usd = daily_limit_usd
+        self._today = today
+        self._day = today()
+        self._ledgers: dict[str, SpendLedger] = {}
+
+    def ledger(self, key: str) -> SpendLedger:
+        if self._today() != self._day:  # new day: forget everyone
+            self._day, self._ledgers = self._today(), {}
+        if key not in self._ledgers:
+            self._ledgers[key] = SpendLedger(self.daily_limit_usd, today=self._today)
+        return self._ledgers[key]
+
+    def exhausted(self, key: str) -> bool:
+        return self.ledger(key).exhausted()
