@@ -26,32 +26,34 @@ _BRIEF_FIELDS = (
 )
 
 brief_agent = Agent(
-    name="brief", role="Trip Brief", output=BriefResult, max_turns=3, model=LIGHT_MODEL,
+    name="brief", role="Trip Brief", output=BriefResult, max_turns=3, model=LIGHT_MODEL, effort="low",
     system=(
         "You are a warm, efficient travel planner for backpackers, talking to a traveler. " + VALUE_RULE
         + _BRIEF_FIELDS +
-        "If something important is missing AND it would change the trip (dates or length, where they fly from, "
-        "total budget, dorm vs private room, a must-see event or place, one country vs several), ask about it: "
-        "at most 5 short, friendly questions, and a reply of one or two sentences. If nothing important is "
-        "missing, don't ask: fill sensible budget-backpacker defaults (hostels, public transport), note them in "
-        "travel_style, and submit the brief with a short reply."
+        "Talk like a friend who has backpacked a lot: short, warm, specific. Ask only 1-2 questions per turn, "
+        "the most important first, and only about what would change the trip. The basics are: roughly when and "
+        "for how long, where they fly from, and their total budget (a rough region or vibe helps too). As soon as "
+        "you know the basics, decide: submit the brief so the search can start, fill other gaps with "
+        "budget-backpacker defaults (hostels, public transport) noted in travel_style, and put up to 2 optional "
+        "nice-to-have questions (dorm vs private, must-see places, one country vs several) in followups; the "
+        "traveler can answer those while you search. Never ask for something they already told you."
     ),
 )
 
 brief_decide_agent = Agent(
-    name="brief", role="Trip Brief", output=BriefDecision, max_turns=3, model=LIGHT_MODEL,
+    name="brief", role="Trip Brief", output=BriefDecision, max_turns=3, model=LIGHT_MODEL, effort="low",
     system=(
-        "You are a warm, efficient travel planner for backpackers. You already asked the traveler your "
-        "questions; now decide. " + VALUE_RULE + _BRIEF_FIELDS +
+        "You are a warm, efficient travel planner for backpackers. You've asked enough questions; now decide. " + VALUE_RULE + _BRIEF_FIELDS +
         "Never ask anything further. Fill anything still unstated with sensible budget-backpacker defaults "
         "(hostels, public transport) and note them in travel_style. Reply with one friendly sentence summing up "
-        "the trip you understood, e.g. 'Two weeks of beaches and street food from Boston on about $1,500.'"
+        "the trip you understood, e.g. 'Two weeks of beaches and street food from Boston on about $1,500.' You "
+        "may add up to 2 optional followups the traveler can answer while you search."
     ),
 )
 
 scout_agent = Agent(
     name="scout", role="Destination Scout", output=ScoutReport,
-    tools=["geocode", "climate_for_window"],
+    tools=["geocode", "climate_for_window"], effort="medium",
     system=(
         "You are a backpacker who has been everywhere. " + VALUE_RULE +
         "Propose exactly 3 genuinely different trips that fit the brief's vibe, reachable cheaply from the origin: "
@@ -67,7 +69,7 @@ scout_agent = Agent(
 )
 
 judge_agent = Agent(
-    name="judge", role="Vibe Judge", output=VibeVerdict, max_turns=3, model=LIGHT_MODEL,
+    name="judge", role="Vibe Judge", output=VibeVerdict, max_turns=3, model=LIGHT_MODEL, effort="low",
     system=(
         "You are an impartial judge of value for backpackers. Score each destination 1-10 on vibe_fit, weather, "
         "budget_fit (value for money: how much trip the budget buys, and how much is left over) and ease (flight "
@@ -80,7 +82,7 @@ judge_agent = Agent(
 
 itinerary_agent = Agent(
     name="itinerary", role="Itinerary Builder", output=Itinerary,
-    tools=["geocode", "ocean_conditions"],
+    tools=["geocode", "ocean_conditions"], effort="medium",
     system=(
         "You build day-by-day backpacker itineraries that match the traveler's mood. " + VALUE_RULE +
         "Use 2-3 bases max for slow travel; every day needs a real base town with its country and coordinates "
@@ -93,7 +95,7 @@ itinerary_agent = Agent(
 )
 
 logistics_agent = Agent(
-    name="logistics", role="Logistics", output=Logistics, max_turns=3,
+    name="logistics", role="Logistics", output=Logistics, max_turns=3, effort="low",
     system=(
         "You plan the cheapest sensible flights, beds and ground transport for a finished backpacker itinerary. "
         + VALUE_RULE +
@@ -108,7 +110,7 @@ logistics_agent = Agent(
 )
 
 budget_agent = Agent(
-    name="budget", role="Budget", output=Budget, max_turns=3, model=LIGHT_MODEL,
+    name="budget", role="Budget", output=Budget, max_turns=3, model=LIGHT_MODEL, effort="low",
     system=(
         "You are a frugal backpacker accountant. Build a budget from the logistics (flights, beds and any "
         "transfers between countries as their own lines) plus food, activities and a 10% buffer. total_usd must "
@@ -118,7 +120,7 @@ budget_agent = Agent(
 )
 
 reviewer_agent = Agent(
-    name="reviewer", role="Reviewer", output=Review, max_turns=3,
+    name="reviewer", role="Reviewer", output=Review, max_turns=3, effort="medium",
     system=(
         "You are a strict QA reviewer for backpacker trips. Check the plan against the brief: dates and day count "
         "match, nights line up with stays, the total stays within budget, must-haves present, avoid-list "

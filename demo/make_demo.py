@@ -42,10 +42,9 @@ def resp(*blocks):
 
 
 # ---------------------------------------------------------------- scripted outputs
-QUESTIONS = dict(reply="A cheap, sunny reset sounds great. A few quick things so I stretch your money right:",
-                 questions=["Which dates, roughly, and for how long?", "Where would you be flying from?",
-                            "What's your total budget, flights included? And are dorms okay?",
-                            "Happy with one country, or would you like to combine two?"])
+QUESTIONS = dict(reply="A cheap, sunny reset sounds perfect. Two quick things so I can start looking:",
+                 questions=["Roughly when, for how long, and where would you fly from?",
+                            "What's your total budget, flights included?"])
 
 BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="Boston (BOS)", budget_usd=1500,
              vibe=["chill", "tropical", "warm water", "learn to surf", "great food", "quiet"],
@@ -53,7 +52,9 @@ BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="
              travel_style="Backpacker, slow travel, 2-3 bases max; hostel dorms; local buses and shared shuttles; solo",
              countries_wanted="either")
 DECISION = dict(reply="Two slow, sunny weeks from Boston on about $1,500, with surf lessons and great cheap food.",
-                brief=BRIEF)
+                brief=BRIEF, followups=["Dorms for every night, or a private room now and then?",
+                                        "Anything you'd love to see or do while you're there?"])
+NOTE = "A private room for the last two nights would be lovely if it fits."
 
 
 def cost(flights, lodging, daily, transfers=0):
@@ -278,11 +279,15 @@ async def main():
         assert rc["total_usd"] == rc["flights_usd"] + rc["lodging_usd"] + rc["daily_spend_usd"] + rc["transfers_usd"]
     assert any(len(o["option"]["countries"]) == 2 for o in ev["options"])
     assert all(o["option"]["rough_cost"]["total_usd"] <= ev["brief"]["budget_usd"] for o in ev["options"])
+    order = [e["type"] for e in rec_o.events if e["type"] in ("brief", "candidates", "options")]
+    assert order == ["brief", "candidates", "options"] and rec_o.of("brief")[0]["followups"]
 
     # Run 3: plan the best option.
     brief, option = TripBrief.model_validate(ev["brief"]), DestinationOption.model_validate(ev["options"][0]["option"])
     rec_p = Recorder("plan_run.jsonl")
-    plan = await pipeline.plan_trip(brief, option, rec_p.emit)
+    plan = await pipeline.plan_trip(brief, option, rec_p.emit, notes=[NOTE])
+    parts = [e["part"] for e in rec_p.of("plan_part")]
+    assert parts == ["itinerary", "logistics", "budget", "itinerary", "logistics", "budget"], parts
     assert plan.review.approved and plan.itinerary.days[4].pace == "slow"
     assert sum(1 for e in rec_p.of("agent_start") if e["agent"] == "logistics") == 2
     assert stay_mismatches(plan.itinerary, plan.logistics, brief.nights) == []

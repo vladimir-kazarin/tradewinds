@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 AIRPORT = r"^[A-Z]{3}$"
 MAX_NIGHTS = 60
 MAX_SAVING_TIPS = 5
+MAX_FOLLOWUPS = 2
 
 
 class TripBrief(BaseModel):
@@ -179,12 +180,22 @@ class Review(BaseModel):
     summary: str
 
 
+FOLLOWUP_DESC = ("Up to 2 optional nice-to-have questions (e.g. dorm vs private, must-see places) the traveler "
+                 "can answer while you search; never ask for something already known")
+
+
 class BriefResult(BaseModel):
-    """First chat turn: either ask what's missing, or decide."""
+    """A chat turn: either ask the next 1-2 questions, or decide and start searching."""
     reply: str = Field(description="Friendly one or two sentences shown to the traveler")
-    questions: list[str] = Field(default_factory=list, max_length=5,
-                                 description="Short questions about what's missing; empty when deciding")
-    brief: TripBrief | None = Field(None, description="Set when nothing important is missing")
+    questions: list[str] = Field(default_factory=list, max_length=3,
+                                 description="The 1-2 most important missing things; empty when deciding")
+    brief: TripBrief | None = Field(None, description="Set as soon as the basics are known")
+    followups: list[str] = Field(default_factory=list, description=FOLLOWUP_DESC)
+
+    @field_validator("followups")
+    @classmethod
+    def _two_followups(cls, v: list[str]) -> list[str]:
+        return v[:MAX_FOLLOWUPS]
 
     @model_validator(mode="after")
     def _exactly_one(self) -> BriefResult:
@@ -194,9 +205,15 @@ class BriefResult(BaseModel):
 
 
 class BriefDecision(BaseModel):
-    """Second chat turn: always decide."""
+    """Final chat round: always decide."""
     reply: str = Field(description="Friendly one or two sentences shown to the traveler")
     brief: TripBrief
+    followups: list[str] = Field(default_factory=list, description=FOLLOWUP_DESC)
+
+    @field_validator("followups")
+    @classmethod
+    def _two_followups(cls, v: list[str]) -> list[str]:
+        return v[:MAX_FOLLOWUPS]
 
 
 class RankedOption(BaseModel):

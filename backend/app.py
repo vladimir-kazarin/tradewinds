@@ -17,7 +17,7 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Annotated, Any, AsyncIterator, Awaitable, Callable
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -50,6 +50,8 @@ LOG_ONLY = {"usage"}  # recorded for us, never sent to travelers
 MAX_TURNS = 8
 SESSION_ID = r"^[A-Za-z0-9-]{1,64}$"  # browser-generated id grouping one search's traces
 TERMINAL = {"questions", "options", "plan", "error"}
+MAX_NOTES = 5
+MAX_NOTE_CHARS = 500
 MAX_PLAN_BODY_CHARS = 30_000  # a real brief + option is ~3k; bigger means abuse
 MIN_SPEED = 0.1
 
@@ -100,6 +102,8 @@ class PlanRequest(BaseModel):
     brief: TripBrief
     option: DestinationOption
     session_id: str | None = Field(None, pattern=SESSION_ID)
+    notes: list[Annotated[str, Field(min_length=1, max_length=MAX_NOTE_CHARS)]] = Field(
+        default_factory=list, max_length=MAX_NOTES)  # what the traveler added while the search ran
 
     @model_validator(mode="before")
     @classmethod
@@ -261,8 +265,8 @@ async def plan(req: PlanRequest, request: Request, demo: bool = False, speed: fl
         return admitted
     trace = TraceInfo("plan-trip", {"brief": req.brief.model_dump(mode="json"), "option": req.option.name},
                       req.session_id)
-    return EventSourceResponse(_live(lambda emit, usage: plan_trip(req.brief, req.option, emit, usage), trace,
-                                     admitted))
+    return EventSourceResponse(_live(lambda emit, usage: plan_trip(req.brief, req.option, emit, usage, req.notes),
+                                     trace, admitted))
 
 
 @app.get("/")

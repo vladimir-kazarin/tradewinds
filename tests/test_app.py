@@ -259,3 +259,10 @@ def test_daily_exhaustion_mid_run_gives_daily_message(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "plan_options", fake)
     evs = _events(TestClient(app.app).post("/api/options", json=FIRST))
     assert evs == [{"type": "error", "message": app.DAILY_LIMIT_MSG}]
+
+
+def test_plan_notes_are_bounded(client):
+    body = _plan_body()
+    assert client.post("/api/plan?speed=100", json={**body, "notes": ["dorms ok"]}).status_code == 200
+    assert client.post("/api/plan", json={**body, "notes": ["x"] * 6}).status_code == 422
+    assert client.post("/api/plan", json={**body, "notes": ["x" * 501]}).status_code == 422

@@ -1,6 +1,7 @@
 """Plain-async orchestration of the crew, in two stateless steps.
 
-    plan_options:  conversation -> Brief -> (questions | Scout -> Judge -> 3 ranked options)
+    plan_options:  conversation -> Brief -> (1-2 questions, up to 2 rounds
+                                             | brief -> Scout -> candidates -> Judge -> 3 ranked options)
     plan_trip:     brief + option -> Itinerary -> Logistics -> Budget -> Reviewer
                                          ^                                 |
                                          +--- revise (MAX_REVISIONS) ------+
@@ -24,7 +25,9 @@ from schemas import (ChatTurn, DestinationOption, Itinerary, Logistics, PlanResu
                      TripBrief, TripLinks, VibeVerdict)
 from status import with_status
 
-MAX_REVISIONS = 2
+MAX_REVISIONS = 1  # one fix round: a second rarely changed the outcome and doubled the wait
+MAX_QUESTION_ROUNDS = 2
+MAX_NOTES = 5
 STEP_ONE_AGENTS = ("brief", "scout", "judge")
 
 
@@ -75,17 +78,20 @@ async def plan_options(turns: list[ChatTurn], emit: Emit, usage: Usage | None = 
     usage = usage or Usage()
     await emit(_run_start("options"))
     task = render_transcript(turns)
-    if any(t.role == "assistant" for t in turns):
+    rounds_asked = sum(t.role == "assistant" for t in turns)
+    if rounds_asked >= MAX_QUESTION_ROUNDS:
         decision = await brief_decide_agent.run(task, emit, usage)
-        reply, brief = decision.reply, decision.brief
+        reply, brief, followups = decision.reply, decision.brief, decision.followups
     else:
-        first = await brief_agent.run(task, emit, usage)
-        if first.questions:
-            ev = {"type": "questions", "reply": first.reply, "questions": first.questions}
+        result = await brief_agent.run(task, emit, usage)
+        if result.questions:
+            ev = {"type": "questions", "reply": result.reply, "questions": result.questions}
             await emit(ev)
             await _emit_usage(emit, usage)
             return ev
-        reply, brief = first.reply, first.brief
+        reply, brief, followups = result.reply, result.brief, result.followups
+    # Show the trip summary (and optional follow-ups) right away; the search runs meanwhile.
+    await emit({"type": "brief", "reply": reply, "brief": _dump(brief), "followups": followups})
 
     scout = await scout_agent.run(f"Brief:\n{_j(brief)}", emit, usage)
     over = option_budget_issues(brief, scout)
@@ -93,6 +99,7 @@ async def plan_options(turns: list[ChatTurn], emit: Emit, usage: Usage | None = 
         scout = await scout_agent.run(
             f"Brief:\n{_j(brief)}\n\nYour previous options:\n{_j(scout)}\n\nFix these problems:{_issues_text(over)}",
             emit, usage)
+    await emit({"type": "candidates", "options": [_dump(o) for o in scout.options]})  # cards before ranking
     verdict = await judge_agent.run(f"Brief:\n{_j(brief)}\n\nOptions:\n{_j(scout)}", emit, usage)
     ranked = rank_options(scout, verdict)
     ev = {"type": "options", "reply": reply, "brief": _dump(brief), "options": [_dump(r) for r in ranked]}
@@ -138,14 +145,20 @@ async def _logistics(ctx: str, brief: TripBrief, option: DestinationOption, itin
     return logistics
 
 
+async def _emit_logistics(emit: Emit, brief: TripBrief, itinerary: Itinerary, logistics: Logistics) -> None:
+    await emit({"type": "plan_part", "part": "logistics", "logistics": _dump(logistics),
+                "links": _dump(final_links(brief, itinerary, logistics))})
+
+
 def final_links(brief: TripBrief, itinerary: Itinerary, logistics: Logistics) -> TripLinks:
     """Stay links come from the itinerary's own nights, so they can't name a town it doesn't sleep in."""
     return build_links(brief, logistics.flights, base_sequence(itinerary, brief.nights))
 
 
 async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit,
-                    usage: Usage | None = None) -> PlanResult:
-    """Step 2: fully plan one option."""
+                    usage: Usage | None = None, notes: list[str] | None = None) -> PlanResult:
+    """Step 2: fully plan one option. `notes` are things the traveler added while the search ran;
+    each finished part is emitted as a `plan_part` so the UI can show it before the review."""
     emit = with_status(emit)
     usage = usage or Usage()
     await emit(_run_start("plan"))
@@ -153,12 +166,18 @@ async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit,
         await emit({"type": "agent_skip", "agent": name})
 
     ctx = f"Brief:\n{_j(brief)}\n\nChosen trip:\n{_j(option)}"
+    if notes:
+        ctx += "\n\nThe traveler also said (these override the brief where they conflict):" + _issues_text(
+            notes[:MAX_NOTES])
     itinerary = await _itinerary(ctx, brief, option, emit, usage)
+    await emit({"type": "plan_part", "part": "itinerary", "itinerary": _dump(itinerary)})
     logistics = await _logistics(ctx, brief, option, itinerary, emit, usage)
+    await _emit_logistics(emit, brief, itinerary, logistics)
 
     for round_ in range(MAX_REVISIONS + 1):
         plan_ctx = f"{ctx}\n\nItinerary:\n{_j(itinerary)}\n\nLogistics:\n{_j(logistics)}"
         budget = await budget_agent.run(plan_ctx, emit, usage)
+        await emit({"type": "plan_part", "part": "budget", "budget": _dump(budget)})
         known = stay_mismatches(itinerary, logistics, brief.nights) + plan_budget_issues(brief, budget)
         flagged = f"\n\nAutomated checks found:{_issues_text(known)}" if known else ""
         review = await reviewer_agent.run(f"{plan_ctx}\n\nBudget:\n{_j(budget)}{flagged}", emit, usage)
@@ -166,7 +185,9 @@ async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit,
             break
         await emit({"type": "revision", "round": round_ + 1, "issues": review.issues})
         itinerary = await _itinerary(ctx, brief, option, emit, usage, itinerary, review.issues)
+        await emit({"type": "plan_part", "part": "itinerary", "itinerary": _dump(itinerary)})
         logistics = await _logistics(ctx, brief, option, itinerary, emit, usage)
+        await _emit_logistics(emit, brief, itinerary, logistics)
 
     result = PlanResult(option_name=option.name, itinerary=itinerary, logistics=logistics, budget=budget,
                         review=review, links=final_links(brief, itinerary, logistics))

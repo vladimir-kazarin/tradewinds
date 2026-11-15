@@ -78,6 +78,7 @@ class Agent(Generic[T]):
     max_turns: int = 8
     max_tokens: int = 16_000  # adaptive thinking counts against this, so leave room
     model: str = MODEL
+    effort: str | None = None  # low | medium | high: the main speed lever on current models
 
     def _submit_tool(self) -> dict[str, Any]:
         return {
@@ -98,11 +99,12 @@ class Agent(Generic[T]):
         system = self.system + SUBMIT_RULE
         trace_input = {"system": system, "messages": tracing.jsonable(messages)} if tracing.enabled() else None
         with tracing.observation(f"{self.name} · turn {turn + 1}", as_type="generation", model=self.model,
-                                 input=trace_input, model_parameters={"max_tokens": self.max_tokens}) as gen:
+                                 input=trace_input, model_parameters={"max_tokens": self.max_tokens, "effort": self.effort}) as gen:
             try:
+                extra = {"output_config": {"effort": self.effort}} if self.effort else {}
                 resp = await client().messages.create(
                     model=self.model, max_tokens=self.max_tokens, system=system,
-                    tools=tools, tool_choice={"type": "auto"}, messages=messages,
+                    tools=tools, tool_choice={"type": "auto"}, messages=messages, **extra,
                 )
             except (APIStatusError, APIConnectionError) as e:
                 await emit({"type": "agent_error", "agent": self.name, "message": str(e)})

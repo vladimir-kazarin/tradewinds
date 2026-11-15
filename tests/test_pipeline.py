@@ -52,3 +52,32 @@ def test_stay_links_follow_itinerary_even_if_logistics_disagrees(brief):
     wrong = logistics([("Nosara", "Costa Rica", 4), ("Samara", "Costa Rica", 10)])
     links = final_links(brief, it, wrong)
     assert [s.base for s in links.stays] == ["Nosara", "Santa Teresa"]
+
+
+def test_traveler_notes_reach_every_planning_agent(monkeypatch, brief, option_cr):
+    import asyncio
+
+    import pipeline
+    from helpers import itinerary, logistics
+    from schemas import Budget, BudgetLine, Review
+
+    seen: dict[str, str] = {}
+    runs = [("Nosara", "Costa Rica", 14)]
+    outputs = {"itinerary": itinerary(runs), "logistics": logistics(runs),
+               "budget": Budget(lines=[BudgetLine(category="a", usd=900)], total_usd=900, within_budget=True, notes=""),
+               "reviewer": Review(approved=True, summary="ok")}
+
+    def fake(name):
+        async def run(task, emit, usage):
+            seen[name] = task
+            return outputs[name]
+        return run
+
+    for name in outputs:
+        monkeypatch.setattr(getattr(pipeline, f"{name}_agent"), "run", fake(name))
+
+    async def emit(ev):
+        pass
+
+    asyncio.run(pipeline.plan_trip(brief, option_cr, emit, notes=["one private night please"]))
+    assert all("one private night please" in seen[n] for n in outputs)
