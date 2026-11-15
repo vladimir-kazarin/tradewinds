@@ -94,3 +94,29 @@ def test_live_run_hides_usage_and_errors_friendly(monkeypatch, tmp_path):
     assert "secret" not in evs[-1]["message"]
     logged = (next(tmp_path.glob("*.jsonl"))).read_text()
     assert '"usage"' in logged and "secret internals" in logged
+
+
+def test_oversized_or_absurd_plan_bodies_are_422(client):
+    body = _plan_body()
+    cases = [
+        {**body, "option": {**body["option"], "why": "x" * 2_000_000}},
+        {**body, "brief": {**body["brief"], "end_date": "2036-12-01", "nights": 3653}},
+        {**body, "option": {**body["option"], "lat": 123.0}},
+    ]
+    for payload in cases:
+        assert client.post("/api/plan", json=payload).status_code == 422
+    raw = json.dumps(body).replace(str(body["option"]["lat"]), "NaN", 1)
+    assert client.post("/api/plan", content=raw, headers={"Content-Type": "application/json"}).status_code == 422
+
+
+def test_live_run_reports_error_when_run_log_cannot_open(monkeypatch, tmp_path):
+    import app
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setattr(app, "RUNS", tmp_path / "missing" / "dir")
+
+    async def fake(turns, emit):
+        await emit({"type": "status", "text": "never"})
+
+    monkeypatch.setattr(app, "plan_options", fake)
+    evs = _events(TestClient(app.app).post("/api/options", json=FIRST))
+    assert [e["type"] for e in evs] == ["error"]

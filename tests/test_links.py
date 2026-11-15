@@ -6,6 +6,8 @@ from urllib.parse import parse_qs, urlparse
 from helpers import logistics
 from links import build_links, flights_url, stay_url
 
+FL = logistics([("x", "Costa Rica", 14)]).flights
+
 CR = "Costa Rica"
 
 
@@ -27,7 +29,7 @@ def test_open_jaw_flight_url(brief):
 
 
 def test_stay_dates_are_cumulative(brief):
-    links = build_links(brief, logistics([("Nosara", CR, 4), ("Santa Teresa", CR, 6), ("Sámara", CR, 4)]))
+    links = build_links(brief, FL, [("Nosara", CR, 4), ("Santa Teresa", CR, 6), ("Sámara", CR, 4)])
     outs = [_q(s.url)["checkout"][0] for s in links.stays]
     ins = [_q(s.url)["checkin"][0] for s in links.stays]
     assert ins == ["2026-12-01", "2026-12-05", "2026-12-11"]
@@ -45,6 +47,6 @@ def test_stay_url_encodes_special_characters():
 
 
 def test_all_links_https(brief):
-    links = build_links(brief, logistics([("Nosara", CR, 14)]))
+    links = build_links(brief, FL, [("Nosara", CR, 14)])
     assert links.flights.startswith("https://")
     assert all(s.url.startswith("https://www.booking.com/") for s in links.stays)

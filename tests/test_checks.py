@@ -38,7 +38,23 @@ def test_extra_stay_reported():
 
 def test_country_outside_option_reported(option_cr):
     runs = [("Nosara", CR, 7), ("Bocas Town", "Panama", 7)]
-    issues = country_mismatches(option_cr, itinerary(runs), logistics(runs))
+    issues = country_mismatches(option_cr, itinerary(runs))
     day_issues = [i for i in issues if "Day 8" in i]
     assert len(day_issues) == 1 and "Panama" in day_issues[0]
-    assert any("Bocas Town" in i and "stay" in i.lower() for i in issues)
+
+
+def test_itinerary_day_count_and_dates_checked(brief):
+    from checks import itinerary_mismatches
+    assert itinerary_mismatches(brief, itinerary(RUNS)) == []
+    short = itinerary([("Nosara", CR, 4), ("Santa Teresa", CR, 6)])
+    assert any("15" in i for i in itinerary_mismatches(brief, short))
+    shifted = itinerary(RUNS).model_copy(update={"days": [d.model_copy(update={"date": d.date.replace(day=d.date.day + 1) if d.day == 3 else d.date}) for d in itinerary(RUNS).days]})
+    assert any("Day 3" in i for i in itinerary_mismatches(brief, shifted))
+
+
+def test_stay_country_issues_are_separate_from_day_issues(option_cr):
+    from checks import stay_country_mismatches
+    runs = [("Nosara", CR, 7), ("Bocas Town", "Panama", 7)]
+    assert all("Day" in i for i in country_mismatches(option_cr, itinerary(runs)))
+    issues = stay_country_mismatches(option_cr, logistics(runs))
+    assert len(issues) == 1 and "Bocas Town" in issues[0]

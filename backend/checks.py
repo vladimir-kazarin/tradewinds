@@ -7,8 +7,9 @@ back to the agent that has to fix them. An empty list means consistent.
 from __future__ import annotations
 
 import unicodedata
+from datetime import timedelta
 
-from schemas import DestinationOption, Itinerary, Logistics
+from schemas import DestinationOption, Itinerary, Logistics, TripBrief
 
 
 def _norm(s: str) -> str:
@@ -51,12 +52,28 @@ def stay_mismatches(itinerary: Itinerary, logistics: Logistics, nights: int) -> 
     return issues
 
 
-def country_mismatches(option: DestinationOption, itinerary: Itinerary,
-                       logistics: Logistics | None = None) -> list[str]:
-    allowed = {_norm(c) for c in option.countries}
+def itinerary_mismatches(brief: TripBrief, itinerary: Itinerary) -> list[str]:
+    """Days must run 1..nights+1 (arrival through departure) on consecutive dates from start_date."""
+    expected = brief.nights + 1
+    numbers = sorted(d.day for d in itinerary.days)
+    if numbers != list(range(1, expected + 1)):
+        return [f"The itinerary must have exactly {expected} days numbered 1 to {expected} "
+                f"(arrival through departure); it has {len(numbers)}."]
+    return [f"Day {d.day} is dated {d.date} but should be {brief.start_date + timedelta(days=d.day - 1)}."
+            for d in itinerary.days if d.date != brief.start_date + timedelta(days=d.day - 1)]
+
+
+def _outside(option: DestinationOption, country: str) -> bool:
+    return _norm(country) not in {_norm(c) for c in option.countries}
+
+
+def country_mismatches(option: DestinationOption, itinerary: Itinerary) -> list[str]:
     listed = ", ".join(option.countries)
-    issues = [f"Day {d.day} ({d.base}) is in {d.country}, which isn't one of this trip's countries ({listed})."
-              for d in itinerary.days if _norm(d.country) not in allowed]
-    issues += [f"Stay in {s.base} is in {s.country}, which isn't one of this trip's countries ({listed})."
-               for s in (logistics.stays if logistics else []) if _norm(s.country) not in allowed]
-    return issues
+    return [f"Day {d.day} ({d.base}) is in {d.country}, which isn't one of this trip's countries ({listed})."
+            for d in itinerary.days if _outside(option, d.country)]
+
+
+def stay_country_mismatches(option: DestinationOption, logistics: Logistics) -> list[str]:
+    listed = ", ".join(option.countries)
+    return [f"Stay in {s.base} is in {s.country}, which isn't one of this trip's countries ({listed})."
+            for s in logistics.stays if _outside(option, s.country)]

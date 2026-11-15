@@ -15,8 +15,9 @@ import time
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_validator
 from sse_starlette.sse import EventSourceResponse
@@ -36,6 +37,7 @@ DEMO_NOTE = {"type": "status", "text": "Demo: showing a sample plan"}
 FRIENDLY_ERROR = "Something went wrong planning this. Please try again."
 LOG_ONLY = {"usage"}  # recorded for us, never sent to travelers
 MAX_TURNS = 8
+MAX_PLAN_BODY_CHARS = 30_000  # a real brief + option is ~3k; bigger means abuse
 MIN_SPEED = 0.1
 
 RUNS.mkdir(exist_ok=True)
@@ -43,6 +45,13 @@ log = logging.getLogger("tradewinds")
 
 app = FastAPI(title="Tradewinds")
 _live_slots = asyncio.Semaphore(int(os.getenv("TRADEWINDS_MAX_CONCURRENT", "2")))  # protect the API budget
+
+
+@app.exception_handler(RequestValidationError)
+async def _invalid_request(_: Request, exc: RequestValidationError) -> JSONResponse:
+    # Never echo the input back: it can be huge or contain values JSON can't encode (NaN).
+    errors = [{"loc": list(e.get("loc", [])), "msg": str(e.get("msg", ""))} for e in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": errors})
 
 
 class OptionsRequest(BaseModel):
@@ -58,6 +67,13 @@ class OptionsRequest(BaseModel):
 class PlanRequest(BaseModel):
     brief: TripBrief
     option: DestinationOption
+
+    @model_validator(mode="before")
+    @classmethod
+    def _bounded_size(cls, data: Any) -> Any:
+        if len(json.dumps(data, default=str)) > MAX_PLAN_BODY_CHARS:  # NaN-safe: default json allows nan
+            raise ValueError("request body too large")
+        return data
 
 
 def _is_live(demo: bool) -> bool:
@@ -84,26 +100,10 @@ async def _live(run: Callable[[Emit], Awaitable[Any]]) -> AsyncIterator[dict]:
 
     async def worker() -> None:
         try:
-            async with _live_slots:
-                # Opened only once a slot is free, so queued runs leave no empty files.
-                with (RUNS / f"{int(time.time() * 1000)}.jsonl").open("w") as f:
-                    last = time.monotonic()
-
-                    async def emit(ev: dict) -> None:
-                        nonlocal last
-                        now = time.monotonic()
-                        f.write(json.dumps({**ev, "_delay": round(now - last, 2)}, default=str) + "\n")
-                        f.flush()
-                        last = now
-                        if ev["type"] not in LOG_ONLY:
-                            await q.put(ev)
-
-                    try:
-                        await run(emit)
-                    except Exception as e:  # surface to UI instead of a dead stream
-                        f.write(json.dumps({"type": "error", "message": f"{type(e).__name__}: {e}"}) + "\n")
-                        log.exception("run failed")
-                        await q.put({"type": "error", "message": FRIENDLY_ERROR})
+            await _run_logged(run, q)
+        except Exception:  # anything outside the run itself (log file, disk): still tell the browser
+            log.exception("run setup failed")
+            await q.put({"type": "error", "message": FRIENDLY_ERROR})
         finally:
             await q.put(None)
 
@@ -113,6 +113,29 @@ async def _live(run: Callable[[Emit], Awaitable[Any]]) -> AsyncIterator[dict]:
             yield {"data": json.dumps(ev, default=str)}
     finally:
         task.cancel()  # client disconnected: stop spending tokens
+
+
+async def _run_logged(run: Callable[[Emit], Awaitable[Any]], q: asyncio.Queue) -> None:
+    async with _live_slots:
+        # Opened only once a slot is free, so queued runs leave no empty files.
+        with (RUNS / f"{int(time.time() * 1000)}.jsonl").open("w") as f:
+            last = time.monotonic()
+
+            async def emit(ev: dict) -> None:
+                nonlocal last
+                now = time.monotonic()
+                f.write(json.dumps({**ev, "_delay": round(now - last, 2)}, default=str) + "\n")
+                f.flush()
+                last = now
+                if ev["type"] not in LOG_ONLY:
+                    await q.put(ev)
+
+            try:
+                await run(emit)
+            except Exception as e:  # surface to UI instead of a dead stream
+                f.write(json.dumps({"type": "error", "message": f"{type(e).__name__}: {e}"}) + "\n")
+                log.exception("run failed")
+                await q.put({"type": "error", "message": FRIENDLY_ERROR})
 
 
 @app.post("/api/options")

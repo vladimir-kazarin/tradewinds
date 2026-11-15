@@ -13,13 +13,14 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 AIRPORT = r"^[A-Z]{3}$"
+MAX_NIGHTS = 60
 
 
 class TripBrief(BaseModel):
     """What the traveler actually wants, extracted from the conversation."""
     start_date: date
     end_date: date
-    nights: int
+    nights: int = Field(ge=1, le=MAX_NIGHTS)
     origin: str = Field(description="Departure city/airport, e.g. 'Boston (BOS)'")
     budget_usd: int = Field(description="Total trip budget incl. flights, USD")
     vibe: list[str] = Field(description="Mood keywords, e.g. ['chill', 'tropical', 'surf']")
@@ -58,8 +59,8 @@ class RoughCost(BaseModel):
 class DestinationOption(BaseModel):
     name: str = Field(description="Region, town or combination, e.g. 'Nicoya Peninsula'")
     countries: list[str] = Field(min_length=1, description="Countries visited, in order")
-    lat: float = Field(description="Map centre")
-    lon: float
+    lat: float = Field(ge=-90, le=90, allow_inf_nan=False, description="Map centre")
+    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
     why: str = Field(description="Why it fits the vibe, 1-2 sentences")
     weather_summary: str = Field(description="Expected weather for the travel window, from the climate tool")
     est_flight_hours: float

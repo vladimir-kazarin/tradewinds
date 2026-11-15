@@ -15,12 +15,13 @@ from datetime import date
 from typing import Any
 
 from agent import Emit, Usage
-from checks import country_mismatches, stay_mismatches
+from checks import (base_sequence, country_mismatches, itinerary_mismatches, stay_country_mismatches,
+                    stay_mismatches)
 from crew import (CREW, brief_agent, brief_decide_agent, budget_agent, itinerary_agent, judge_agent,
                   logistics_agent, reviewer_agent, scout_agent)
 from links import build_links
 from schemas import (ChatTurn, DestinationOption, Itinerary, Logistics, PlanResult, RankedOption, ScoutReport,
-                     TripBrief, VibeVerdict)
+                     TripBrief, TripLinks, VibeVerdict)
 from status import with_status
 
 MAX_REVISIONS = 2
@@ -96,9 +97,19 @@ def _issues_text(issues: list[str]) -> str:
     return "\n- " + "\n- ".join(issues)
 
 
-async def _itinerary(ctx: str, option: DestinationOption, emit: Emit, usage: Usage) -> Itinerary:
-    itinerary = await itinerary_agent.run(ctx, emit, usage)
-    issues = country_mismatches(option, itinerary)
+def _itinerary_issues(brief: TripBrief, option: DestinationOption, itinerary: Itinerary) -> list[str]:
+    return itinerary_mismatches(brief, itinerary) + country_mismatches(option, itinerary)
+
+
+async def _itinerary(ctx: str, brief: TripBrief, option: DestinationOption, emit: Emit, usage: Usage,
+                     previous: Itinerary | None = None, review_issues: list[str] | None = None) -> Itinerary:
+    """Build (or revise, given previous + review_issues) the itinerary, with one code-check retry."""
+    task = ctx
+    if previous is not None:
+        task = (f"{ctx}\n\nYour previous itinerary:\n{_j(previous)}\n\n"
+                f"The reviewer found these issues, fix all of them:{_issues_text(review_issues or [])}")
+    itinerary = await itinerary_agent.run(task, emit, usage)
+    issues = _itinerary_issues(brief, option, itinerary)
     if issues:
         itinerary = await itinerary_agent.run(
             f"{ctx}\n\nYour previous itinerary:\n{_j(itinerary)}\n\nFix these problems:{_issues_text(issues)}",
@@ -110,13 +121,18 @@ async def _logistics(ctx: str, brief: TripBrief, option: DestinationOption, itin
                      emit: Emit, usage: Usage) -> Logistics:
     task = f"{ctx}\n\nItinerary:\n{_j(itinerary)}"
     logistics = await logistics_agent.run(task, emit, usage)
-    issues = stay_mismatches(itinerary, logistics, brief.nights) + country_mismatches(option, itinerary, logistics)
+    issues = stay_mismatches(itinerary, logistics, brief.nights) + stay_country_mismatches(option, logistics)
     if issues:
         # One retry; anything left is the reviewer's to catch.
         logistics = await logistics_agent.run(
             f"{task}\n\nYour previous logistics:\n{_j(logistics)}\n\nFix these problems:{_issues_text(issues)}",
             emit, usage)
     return logistics
+
+
+def final_links(brief: TripBrief, itinerary: Itinerary, logistics: Logistics) -> TripLinks:
+    """Stay links come from the itinerary's own nights, so they can't name a town it doesn't sleep in."""
+    return build_links(brief, logistics.flights, base_sequence(itinerary, brief.nights))
 
 
 async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit) -> PlanResult:
@@ -128,24 +144,23 @@ async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit) -> 
         await emit({"type": "agent_skip", "agent": name})
 
     ctx = f"Brief:\n{_j(brief)}\n\nChosen trip:\n{_j(option)}"
-    itinerary = await _itinerary(ctx, option, emit, usage)
+    itinerary = await _itinerary(ctx, brief, option, emit, usage)
     logistics = await _logistics(ctx, brief, option, itinerary, emit, usage)
 
     for round_ in range(MAX_REVISIONS + 1):
         plan_ctx = f"{ctx}\n\nItinerary:\n{_j(itinerary)}\n\nLogistics:\n{_j(logistics)}"
         budget = await budget_agent.run(plan_ctx, emit, usage)
-        review = await reviewer_agent.run(f"{plan_ctx}\n\nBudget:\n{_j(budget)}", emit, usage)
+        known = stay_mismatches(itinerary, logistics, brief.nights)
+        flagged = f"\n\nAutomated checks found:{_issues_text(known)}" if known else ""
+        review = await reviewer_agent.run(f"{plan_ctx}\n\nBudget:\n{_j(budget)}{flagged}", emit, usage)
         if review.approved or round_ == MAX_REVISIONS:
             break
         await emit({"type": "revision", "round": round_ + 1, "issues": review.issues})
-        itinerary = await itinerary_agent.run(
-            f"{ctx}\n\nYour previous itinerary:\n{_j(itinerary)}\n\n"
-            f"The reviewer found these issues, fix all of them:{_issues_text(review.issues)}",
-            emit, usage)
+        itinerary = await _itinerary(ctx, brief, option, emit, usage, itinerary, review.issues)
         logistics = await _logistics(ctx, brief, option, itinerary, emit, usage)
 
     result = PlanResult(option_name=option.name, itinerary=itinerary, logistics=logistics, budget=budget,
-                        review=review, links=build_links(brief, logistics))
+                        review=review, links=final_links(brief, itinerary, logistics))
     await emit({"type": "plan", **_dump(result)})
     await _emit_usage(emit, usage)
     return result

@@ -43,3 +43,12 @@ def test_render_transcript_marks_roles():
                               ChatTurn(role="user", text="December")])
     assert text.startswith("Today is ")
     assert "Traveler: warm please" in text and "You asked: When?" in text and "Traveler: December" in text
+
+
+def test_stay_links_follow_itinerary_even_if_logistics_disagrees(brief):
+    from helpers import itinerary, logistics
+    from pipeline import final_links
+    it = itinerary([("Nosara", "Costa Rica", 4), ("Santa Teresa", "Costa Rica", 10)])
+    wrong = logistics([("Nosara", "Costa Rica", 4), ("Samara", "Costa Rica", 10)])
+    links = final_links(brief, it, wrong)
+    assert [s.base for s in links.stays] == ["Nosara", "Santa Teresa"]
