@@ -211,7 +211,13 @@ async function streamSSE(url, body, onEvent, signal) {
     if (e.name !== "AbortError") onEvent({ type: "error", message: FALLBACK_ERROR });
     return;
   }
-  if (!resp.ok || !resp.body) { onEvent({ type: "error", message: FALLBACK_ERROR }); return; }
+  if (!resp.ok || !resp.body) {
+    // 429 / 503 carry a traveler-facing reason (rate limit, daily cap, busy).
+    let message = FALLBACK_ERROR;
+    try { const j = await resp.json(); if (typeof j.detail === "string") message = j.detail; } catch (_) { /* not JSON */ }
+    onEvent({ type: "error", message });
+    return;
+  }
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -287,7 +293,7 @@ function renderThread(typing) {
     ? `<div class="bubble me">${esc(t.text)}</div>`
     : `<div class="bubble them">${t.html}</div>`);
   if (typing) bubbles.push(`<div class="bubble them typing">${esc(typing)}</div>`);
-  if (state.chatError) bubbles.push(`<div class="bubble them">${esc(FALLBACK_ERROR)}<div class="retry">
+  if (state.chatError) bubbles.push(`<div class="bubble them">${esc(state.chatError)}<div class="retry">
       <button class="btn secondary" id="retry-chat">Try again</button></div></div>`);
   $("#thread").innerHTML = bubbles.join("");
   const retry = $("#retry-chat");
@@ -333,7 +339,7 @@ function onOptionsEvent(ev) {
       window.scrollTo(0, 0);
       break;
     case "error":
-      setState({ busy: false, chatError: true });
+      setState({ busy: false, chatError: ev.message || FALLBACK_ERROR });
       showWorking(false);
       renderThread();
       break;
@@ -367,10 +373,10 @@ function renderResults() {
 
 function renderBanner() {
   const err = state.planError;
-  $("#results-banner").innerHTML = err === null ? "" : `<div class="banner"><span>${esc(FALLBACK_ERROR)}</span>
+  $("#results-banner").innerHTML = err === null ? "" : `<div class="banner"><span>${esc(err.message)}</span>
     <button class="btn secondary" id="retry-plan">Try again</button></div>`;
   const retry = $("#retry-plan");
-  if (retry) retry.onclick = () => planCard(err);
+  if (retry) retry.onclick = () => planCard(err.index);
 }
 
 function planCard(i) {
@@ -401,7 +407,7 @@ function onPlanEvent(i, ev) {
     renderPlan(i);
     scrollToPlan();
   } else if (ev.type === "error") {
-    setState({ busy: false, planError: i });
+    setState({ busy: false, planError: { index: i, message: ev.message || FALLBACK_ERROR } });
     showWorking(false);
     renderResults();
   }

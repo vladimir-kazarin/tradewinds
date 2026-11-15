@@ -59,17 +59,20 @@ def rank_options(scout: ScoutReport, verdict: VibeVerdict) -> list[RankedOption]
 
 
 async def _emit_usage(emit: Emit, usage: Usage) -> None:
-    await emit({"type": "usage", "input_tokens": usage.input_tokens, "output_tokens": usage.output_tokens})
+    await emit({"type": "usage", "input_tokens": usage.input_tokens, "output_tokens": usage.output_tokens,
+                "cost_usd": round(usage.cost_usd, 4)})
 
 
 def _run_start(step: str) -> dict[str, Any]:
     return {"type": "run_start", "step": step, "agents": [{"name": a.name, "role": a.role} for a in CREW]}
 
 
-async def plan_options(turns: list[ChatTurn], emit: Emit) -> dict[str, Any]:
-    """Step 1. Returns the terminal event it emitted (`questions` or `options`)."""
+async def plan_options(turns: list[ChatTurn], emit: Emit, usage: Usage | None = None) -> dict[str, Any]:
+    """Step 1. Returns the terminal event it emitted (`questions` or `options`).
+
+    Pass a `Usage` carrying the run's spend cap and the daily ledger; the default has no limits."""
     emit = with_status(emit)
-    usage = Usage()
+    usage = usage or Usage()
     await emit(_run_start("options"))
     task = render_transcript(turns)
     if any(t.role == "assistant" for t in turns):
@@ -135,10 +138,11 @@ def final_links(brief: TripBrief, itinerary: Itinerary, logistics: Logistics) ->
     return build_links(brief, logistics.flights, base_sequence(itinerary, brief.nights))
 
 
-async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit) -> PlanResult:
+async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit,
+                    usage: Usage | None = None) -> PlanResult:
     """Step 2: fully plan one option."""
     emit = with_status(emit)
-    usage = Usage()
+    usage = usage or Usage()
     await emit(_run_start("plan"))
     for name in STEP_ONE_AGENTS:
         await emit({"type": "agent_skip", "agent": name})

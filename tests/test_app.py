@@ -83,7 +83,7 @@ def test_live_run_hides_usage_and_errors_friendly(monkeypatch, tmp_path):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     monkeypatch.setattr(app, "RUNS", tmp_path)
 
-    async def fake(turns, emit):
+    async def fake(turns, emit, usage=None):
         await emit({"type": "status", "text": "Reading your trip…"})
         await emit({"type": "usage", "input_tokens": 1, "output_tokens": 1})
         raise RuntimeError("secret internals")
@@ -114,9 +114,78 @@ def test_live_run_reports_error_when_run_log_cannot_open(monkeypatch, tmp_path):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     monkeypatch.setattr(app, "RUNS", tmp_path / "missing" / "dir")
 
-    async def fake(turns, emit):
+    async def fake(turns, emit, usage=None):
         await emit({"type": "status", "text": "never"})
 
     monkeypatch.setattr(app, "plan_options", fake)
     evs = _events(TestClient(app.app).post("/api/options", json=FIRST))
     assert [e["type"] for e in evs] == ["error"]
+
+
+def _live_app(monkeypatch, tmp_path, **env):
+    import app
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setattr(app, "RUNS", tmp_path)
+    for k, v in env.items():
+        monkeypatch.setattr(app, k, v)
+
+    async def fake(turns, emit, usage=None):
+        await emit({"type": "questions", "reply": "hi", "questions": ["when?"]})
+
+    monkeypatch.setattr(app, "plan_options", fake)
+    return app
+
+
+def test_live_requests_are_rate_limited_per_ip(monkeypatch, tmp_path):
+    from limits import RateLimiter
+    app = _live_app(monkeypatch, tmp_path, OPTIONS_LIMITER=RateLimiter(limit=2, window_s=3600))
+    c = TestClient(app.app)
+    assert c.post("/api/options", json=FIRST).status_code == 200
+    assert c.post("/api/options", json=FIRST).status_code == 200
+    r = c.post("/api/options", json=FIRST)
+    assert r.status_code == 429 and int(r.headers["retry-after"]) > 0
+    assert "detail" in r.json()
+
+
+def test_forwarded_ip_ignored_unless_proxy_trusted(monkeypatch, tmp_path):
+    from limits import RateLimiter
+    app = _live_app(monkeypatch, tmp_path, OPTIONS_LIMITER=RateLimiter(limit=1, window_s=3600), TRUST_PROXY=False)
+    c = TestClient(app.app)
+    assert c.post("/api/options", json=FIRST, headers={"Fly-Client-IP": "1.1.1.1"}).status_code == 200
+    assert c.post("/api/options", json=FIRST, headers={"Fly-Client-IP": "2.2.2.2"}).status_code == 429
+    monkeypatch.setattr(app, "TRUST_PROXY", True)
+    monkeypatch.setattr(app, "OPTIONS_LIMITER", RateLimiter(limit=1, window_s=3600))
+    assert c.post("/api/options", json=FIRST, headers={"Fly-Client-IP": "1.1.1.1"}).status_code == 200
+    assert c.post("/api/options", json=FIRST, headers={"Fly-Client-IP": "2.2.2.2"}).status_code == 200
+
+
+def test_daily_budget_exhausted_returns_503(monkeypatch, tmp_path):
+    from limits import SpendLedger
+    ledger = SpendLedger(daily_limit_usd=1.0)
+    ledger.add(1.5)
+    app = _live_app(monkeypatch, tmp_path, LEDGER=ledger)
+    r = TestClient(app.app).post("/api/options", json=FIRST)
+    assert r.status_code == 503 and "detail" in r.json()
+
+
+def test_demo_mode_is_never_limited(client, monkeypatch):
+    import app
+    from limits import RateLimiter
+    monkeypatch.setattr(app, "OPTIONS_LIMITER", RateLimiter(limit=0, window_s=3600))
+    assert client.post("/api/options?speed=100", json=FIRST).status_code == 200
+
+
+def test_run_over_budget_stops_with_friendly_message(monkeypatch, tmp_path):
+    import app
+    from types import SimpleNamespace as NS
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setattr(app, "RUNS", tmp_path)
+    monkeypatch.setattr(app, "RUN_BUDGET_USD", 0.01)
+
+    async def fake(turns, emit, usage):
+        usage.add(NS(input_tokens=100_000, output_tokens=0))  # $0.20 on any priced model
+        await emit({"type": "status", "text": "never"})
+
+    monkeypatch.setattr(app, "plan_options", fake)
+    evs = _events(TestClient(app.app).post("/api/options", json=FIRST))
+    assert evs == [{"type": "error", "message": app.TOO_BIG_ERROR}]

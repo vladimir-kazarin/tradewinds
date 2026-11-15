@@ -20,6 +20,7 @@ from typing import Any, Awaitable, Callable, Generic, TypeVar
 from anthropic import AsyncAnthropic, APIStatusError, APIConnectionError
 from pydantic import BaseModel, ValidationError
 
+from limits import RunBudgetExceeded, SpendLedger, cost_usd
 from tools import TOOL_REGISTRY, run_tool
 
 T = TypeVar("T", bound=BaseModel)
@@ -42,12 +43,23 @@ def client() -> AsyncAnthropic:
 
 @dataclass
 class Usage:
+    """Tokens and estimated cost for one run, charged to the daily ledger as they happen."""
+    model: str = MODEL
+    budget_usd: float | None = None
+    ledger: SpendLedger | None = None
     input_tokens: int = 0
     output_tokens: int = 0
+    cost_usd: float = 0.0
 
     def add(self, u: Any) -> None:
         self.input_tokens += u.input_tokens
         self.output_tokens += u.output_tokens
+        delta = cost_usd(self.model, u.input_tokens, u.output_tokens)
+        self.cost_usd += delta
+        if self.ledger is not None:
+            self.ledger.add(delta)
+        if self.budget_usd is not None and self.cost_usd > self.budget_usd:
+            raise RunBudgetExceeded(f"run spent ${self.cost_usd:.3f}, cap is ${self.budget_usd:.2f}")
 
 
 @dataclass
