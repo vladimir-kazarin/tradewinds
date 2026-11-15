@@ -23,8 +23,8 @@ import pipeline  # noqa: E402
 from checks import stay_mismatches  # noqa: E402
 from schemas import ChatTurn, DestinationOption, TripBrief  # noqa: E402
 
-PROMPT = "Somewhere warm in December, I'm burnt out. Want to learn to surf, great food, no party scene."
-ANSWER = "Dec 1–15, from Boston, around $3k. One country or two is fine."
+PROMPT = "Somewhere warm and cheap in December, I'm burnt out. Want to learn to surf, great food, no party hostels."
+ANSWER = "Dec 1–15, from Boston, about $1,500 all in. Dorms are fine. One country or two."
 
 _ids = itertools.count(1)
 
@@ -42,17 +42,17 @@ def resp(*blocks):
 
 
 # ---------------------------------------------------------------- scripted outputs
-QUESTIONS = dict(reply="That sounds like exactly what you need. A few quick things so I plan it right:",
+QUESTIONS = dict(reply="A cheap, sunny reset sounds great. A few quick things so I stretch your money right:",
                  questions=["Which dates, roughly, and for how long?", "Where would you be flying from?",
-                            "What's your budget for everything, flights included?",
+                            "What's your total budget, flights included? And are dorms okay?",
                             "Happy with one country, or would you like to combine two?"])
 
-BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="Boston (BOS)", budget_usd=3000,
+BRIEF = dict(start_date="2026-12-01", end_date="2026-12-15", nights=14, origin="Boston (BOS)", budget_usd=1500,
              vibe=["chill", "tropical", "warm water", "learn to surf", "great food", "quiet"],
              must_haves=["beginner-friendly surf lessons", "good local food"], avoid=["party scene"],
-             travel_style="Slow travel, 2-3 bases max; mid-range comfort; assumed solo traveler",
+             travel_style="Backpacker, slow travel, 2-3 bases max; hostel dorms; local buses and shared shuttles; solo",
              countries_wanted="either")
-DECISION = dict(reply="Two slow, sunny weeks from Boston for around $3k, with surf lessons and great food.",
+DECISION = dict(reply="Two slow, sunny weeks from Boston on about $1,500, with surf lessons and great cheap food.",
                 brief=BRIEF)
 
 
@@ -67,17 +67,17 @@ OPTS = [
              "great sodas. Dry season just starting.",
          weather_summary="Avg high 31°C / low 23°C, 2 of 15 days with rain, ~8 h sunshine/day",
          est_flight_hours=6.5, tradeoffs="Dirt roads between towns; Santa Teresa pricier than it used to be.",
-         rough_cost=cost(520, 1190, 1020)),
+         rough_cost=cost(420, 330, 560)),
     dict(name="Caribbean Costa Rica + Bocas del Toro", countries=["Costa Rica", "Panama"], lat=9.3403, lon=-82.2420,
          why="Reggae-slow Puerto Viejo, then a short border hop to Panama's stilt-house islands and calm bays.",
          weather_summary="Avg high 29°C / low 24°C, 8 of 15 days with rain, ~5 h sunshine/day",
          est_flight_hours=7.5, tradeoffs="December is wet on the Caribbean side; Bocas Town has a party strip.",
-         rough_cost=cost(610, 900, 840, 120)),
+         rough_cost=cost(480, 280, 470, 45)),
     dict(name="Siargao", countries=["Philippines"], lat=9.8482, lon=126.0458,
          why="Palm-jungle island with a soft surf scene and incredible island-hopping.",
          weather_summary="Avg high 29°C / low 24°C, 11 of 15 days with rain, ~4 h sunshine/day",
          est_flight_hours=22.0, tradeoffs="Peak rainy season in December and ~2 days lost to travel each way.",
-         rough_cost=cost(1650, 700, 650)),
+         rough_cost=cost(1050, 170, 270)),
 ]
 NICOYA, CARIB, SIARGAO = (o["name"] for o in OPTS)
 
@@ -89,9 +89,9 @@ VERDICT = dict(scores=[
     "Nicoya wins on what matters most for a burnt-out traveler in December: dry-season sun, beginner surf, and a "
     "6.5 h flight. Siargao is the dreamiest vibe but rain and a 22 h journey would eat the trip; the Caribbean "
     "combo is cheapest but wet this time of year."),
-    pitches=[dict(name=NICOYA, pitch="Dry-season sun, soft beginner waves and three sleepy surf towns down one coast."),
-             dict(name=CARIB, pitch="Two countries, one slow rhythm: Caribbean food, calm bays and island hammocks."),
-             dict(name=SIARGAO, pitch="A palm-jungle island with a gentle surf scene, if you don't mind some rain.")],
+    pitches=[dict(name=NICOYA, pitch="Dry-season sun, $20 surf-hostel dorms and three sleepy surf towns linked by local buses."),
+             dict(name=CARIB, pitch="The cheapest of the three: two countries, $10 rice-and-beans and island hammocks."),
+             dict(name=SIARGAO, pitch="Dirt-cheap beds and food once you're there, but the long flight eats most of the budget.")],
     ranking=[NICOYA, CARIB, SIARGAO])
 
 NOS, ST, SAM = (9.9781, -85.6528), (9.6464, -85.1686), (9.8800, -85.5280)
@@ -136,7 +136,7 @@ DAYS_V1 = [
 ]
 DAYS_V2 = [d if d["day"] != 5 else day(
     5, 5, "Santa Teresa", ST, "Coast-road travel day", "Lazy breakfast, last swim at Guiones",
-    "Private 4x4 shuttle down the coast road (~3 h, unpaved); no lessons today",
+    "Shared shuttle down the coast road (~3 h, unpaved, $35); no lessons today",
     "Arrive, fish tacos and sunset at Playa Carmen", "slow") for d in DAYS_V1]
 
 ITIN = lambda days: dict(headline="Two slow weeks of sun, gentle waves and gallo pinto on Costa Rica's Nicoya coast",
@@ -144,28 +144,32 @@ ITIN = lambda days: dict(headline="Two slow weeks of sun, gentle waves and gallo
                                                  "Turtle nesting at Ostional", "Snorkeling at Isla Tortuga",
                                                  "Kayaking to Isla Chora", "Zero party towns"])
 
-LOG = dict(flights=dict(route="BOS → LIR (1 stop via MIA/ATL) round trip", est_round_trip_usd=520,
+LOG = dict(flights=dict(route="BOS → LIR (1 stop via FLL on a budget carrier) round trip", est_round_trip_usd=420,
                         depart_airport="BOS", arrive_airport="LIR", return_from_airport="LIR",
-                        notes="Estimate for early December; book ~6 weeks out. LIR is much closer than SJO."),
-           stays=[dict(base="Nosara", country="Costa Rica", nights=4, kind="Jungle cabina 5 min from Guiones", est_per_night_usd=85),
-                  dict(base="Santa Teresa", country="Costa Rica", nights=6, kind="Surf-hostel private room with pool", est_per_night_usd=95),
-                  dict(base="Sámara", country="Costa Rica", nights=4, kind="Beachfront guesthouse", est_per_night_usd=70)],
-           getting_around="Shared and private shuttles between towns (no car needed); bikes and walking within each town.",
+                        notes="Estimate for early December; book ~6 weeks out, carry-on only. LIR is closer and cheaper than SJO."),
+           stays=[dict(base="Nosara", country="Costa Rica", nights=4, kind="Surf-hostel dorm 5 min from Guiones", est_per_night_usd=22),
+                  dict(base="Santa Teresa", country="Costa Rica", nights=6, kind="Hostel dorm with shared kitchen", est_per_night_usd=26),
+                  dict(base="Sámara", country="Costa Rica", nights=4, kind="Family-run guesthouse dorm", est_per_night_usd=18)],
+           getting_around="Local buses and one shared shuttle between towns (no car needed); walking and $5/day bike rentals in town.",
            packing=["Reef-safe sunscreen", "Rash guard", "Light rain shell", "Headlamp", "Dry bag",
                     "Sandals + one pair of trainers", "Insect repellent", "USD cash for shuttles"])
 
-BUDGET = dict(lines=[dict(category="Flights", usd=520), dict(category="Lodging (14 nights)", usd=1190),
-                     dict(category="Shuttles", usd=160), dict(category="Food (~$40/day)", usd=560),
-                     dict(category="Surf lessons, yoga, tours", usd=300), dict(category="10% buffer", usd=270)],
-              total_usd=3000, within_budget=True,
-              notes="Right at budget. Easiest cuts: cook 3 dinners at the hostel (-$60), group shuttles (-$40).")
+BUDGET = dict(lines=[dict(category="Flights", usd=420), dict(category="Hostel beds (14 nights)", usd=316),
+                     dict(category="Buses and one shared shuttle", usd=75), dict(category="Food (~$18/day)", usd=252),
+                     dict(category="Surf lessons and board rental", usd=200), dict(category="10% buffer", usd=126)],
+              total_usd=1389, within_budget=True,
+              notes="About $110 under budget, with a buffer for a splurge dinner or an extra lesson.",
+              saving_tips=["Cook breakfast and two dinners a week in the hostel kitchen (about -$60)",
+                           "Rent a board for the week instead of daily (-$25)",
+                           "Take the 6am local bus instead of the shuttle where there is one (-$30)",
+                           "Book flights midweek with carry-on only"])
 
 REVIEW_1 = dict(approved=False, issues=[
     "Day 5 is marked 'active' with an early surf lesson, but Nosara → Santa Teresa is ~3 h on unpaved coast road. "
-    "Make it a slow travel day and use a private 4x4 shuttle."],
+    "Make it a slow travel day and take the shared shuttle."],
     summary="Strong plan; one unrealistic transfer day.")
 REVIEW_2 = dict(approved=True, issues=[], summary=(
-    "Dates, 14 nights and 3 bases line up; budget lands at $3,000; surf lessons and food are covered; no party towns. "
+    "Dates, 14 nights and 3 bases line up; budget lands at $1,389 of $1,500; surf lessons and food are covered; no party hostels. "
     "Day 5 is now a realistic travel day."))
 
 SCRIPTS = {
@@ -273,6 +277,7 @@ async def main():
         rc = o["option"]["rough_cost"]
         assert rc["total_usd"] == rc["flights_usd"] + rc["lodging_usd"] + rc["daily_spend_usd"] + rc["transfers_usd"]
     assert any(len(o["option"]["countries"]) == 2 for o in ev["options"])
+    assert all(o["option"]["rough_cost"]["total_usd"] <= ev["brief"]["budget_usd"] for o in ev["options"])
 
     # Run 3: plan the best option.
     brief, option = TripBrief.model_validate(ev["brief"]), DestinationOption.model_validate(ev["options"][0]["option"])
@@ -283,6 +288,7 @@ async def main():
     assert stay_mismatches(plan.itinerary, plan.logistics, brief.nights) == []
     assert sum(s.nights for s in plan.logistics.stays) == brief.nights
     assert sum(line.usd for line in plan.budget.lines) == plan.budget.total_usd
+    assert plan.budget.total_usd <= brief.budget_usd and plan.budget.within_budget and plan.budget.saving_tips
     links = [plan.links.flights, *(s.url for s in plan.links.stays)]
     assert all(u.startswith("https://") for u in links)
     stays = " ".join(s.url for s in plan.links.stays)

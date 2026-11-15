@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Tradewinds</title>
+<meta name="description" content="Backpacker trip planner: tell it where you'd like to go and get three best-value trips." />
 <link rel="stylesheet" href="/static/vendor/leaflet.css" />
 <style>
 @font-face { font-family: "Fraunces"; src: url(/static/vendor/fraunces-latin-opsz-normal.woff2) format("woff2"); font-weight: 100 900; }
@@ -38,7 +39,8 @@ a { color: var(--lagoon); }
 /* ---------- ask ---------- */
 .view { min-height: 100vh; padding: 80px 16px 48px; }
 .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.ask-title { font-size: clamp(32px, 6vw, 54px); margin: 0 0 26px; letter-spacing: -.01em; }
+.ask-title { font-size: clamp(32px, 6vw, 54px); margin: 0 0 10px; letter-spacing: -.01em; }
+.ask-sub { margin: 0 0 26px; max-width: 460px; }
 .composer { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 22px;
   width: min(560px, 100%); display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
 .composer input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 17px; padding: 10px 0; min-width: 0; }
@@ -137,6 +139,8 @@ a { color: var(--lagoon); }
 .budget tr.total td { font-weight: 800; border-bottom: 0; font-size: 16px; }
 .book { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
 .note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+.tips { margin: 0; padding-left: 18px; font-size: 14px; }
+.tips li { margin: 4px 0; }
 </style>
 </head>
 <body>
@@ -148,8 +152,9 @@ a { color: var(--lagoon); }
 <main>
   <section class="view center" id="v-ask">
     <h1 class="serif ask-title">Where would you like to go?</h1>
+    <p class="muted ask-sub">Best-value trips for backpackers: cheap beds, buses, street food, real adventures.</p>
     <form class="composer" id="ask-form">
-      <input id="ask-input" maxlength="1000" autocomplete="off" placeholder="Somewhere warm in December, I'm burnt out…" aria-label="Describe your trip" />
+      <input id="ask-input" maxlength="1000" autocomplete="off" placeholder="Somewhere warm and cheap in December, about $1,500…" aria-label="Describe your trip" />
       <button class="send" aria-label="Send">→</button>
     </form>
   </section>
@@ -167,7 +172,7 @@ a { color: var(--lagoon); }
   <section class="view" id="v-results" hidden>
     <div class="results-wrap">
       <div id="results-banner"></div>
-      <h1 class="serif reply">Three trips for you</h1>
+      <h1 class="serif reply">Three best-value trips for you</h1>
       <p class="muted summary" id="reply"></p>
       <div class="cards" id="cards"></div>
       <div id="plan"></div>
@@ -187,6 +192,7 @@ const $ = sel => document.querySelector(sel);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => "$" + Number(n || 0).toLocaleString("en-US");
 const shortDate = iso => new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const perDay = (total, nights) => nights > 0 ? `~${money(Math.round(total / nights))} a day` : "";
 const safeUrl = u => /^https:\/\//.test(String(u)) ? String(u) : "#";
 const QS = new URLSearchParams(location.search).get("demo") ? "?demo=1" : "";
 const CREW = { brief: ["📝", "Brief"], scout: ["🧭", "Scout"], judge: ["⚖️", "Judge"], itinerary: ["🗺️", "Itinerary"],
@@ -357,14 +363,14 @@ function renderResults() {
     const label = planned ? (state.selected === i ? "Your plan is below" : "See this plan") : "Plan this trip";
     return `<article class="card${state.selected === i ? " selected" : ""}">
       <div class="hero g${i % 3}">
-        ${r.best ? `<span class="badge">Best match</span>` : ""}
+        ${r.best ? `<span class="badge">Best value</span>` : ""}
         <span class="serif name">${esc(o.name)}</span>
         <span class="where">${o.countries.map(esc).join(" · ")} · ${nights} nights</span>
       </div>
       <div class="body">
         <p class="pitch">${esc(r.pitch)}</p>
         <div><span class="serif price">about ${money(o.rough_cost.total_usd)}</span>
-          <div class="muted price-note">estimate, flights included</div></div>
+          <div class="muted price-note">${perDay(o.rough_cost.total_usd, nights)} · estimate, flights included</div></div>
         <button class="btn ${planned ? "secondary" : "primary"}" data-plan="${i}" ${state.busy ? "disabled" : ""}>${label}</button>
       </div></article>`;
   }).join("");
@@ -455,6 +461,7 @@ function renderPlan(i) {
         <table class="budget">${bd.lines.map(l => `<tr><td>${esc(l.category)}</td><td>${money(l.usd)}</td></tr>`).join("")}
           <tr class="total"><td>Total</td><td>${money(bd.total_usd)}</td></tr></table>
         <p class="note">${bd.within_budget ? "Within your budget." : "Over your budget."} ${esc(bd.notes)}</p>
+        ${(bd.saving_tips || []).length ? `<h3>Ways to save</h3><ul class="tips">${bd.saving_tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
       </div>
     </div></section>`;
   drawMap(baseRuns(it.days));

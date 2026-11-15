@@ -76,7 +76,7 @@ class OptionScore(BaseModel):
     name: str
     vibe_fit: int = Field(ge=1, le=10)
     weather: int = Field(ge=1, le=10)
-    budget_fit: int = Field(ge=1, le=10)
+    budget_fit: int = Field(ge=1, le=10, description="Value for money: how much trip the budget buys")
     ease: int = Field(ge=1, le=10)
     total: int
 
@@ -157,6 +157,8 @@ class Budget(BaseModel):
     total_usd: int
     within_budget: bool
     notes: str
+    saving_tips: list[str] = Field(default_factory=list, max_length=5,
+                                   description="Concrete ways to spend less on this trip")
 
     @model_validator(mode="after")
     def _total_is_sum(self) -> Budget:
