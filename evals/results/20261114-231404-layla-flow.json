@@ -1,0 +1,220 @@
+{
+ "label": "layla-flow",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 2,
+  "errors": 0,
+  "all_checks_pass_rate": 0.0,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 1.0,
+   "brief_nights": 1.0,
+   "brief_origin": 1.0,
+   "days_and_dates": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 1.0,
+   "reviewer_approved": 0.0,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": 4.0,
+  "judge_fit_avg": 4.0,
+  "cost_usd_total": 0.467,
+  "seconds_avg": 145.7
+ },
+ "results": [
+  {
+   "id": "vague-warm",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 3.4,
+    "candidates": 28.3,
+    "options": 39.5
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "Bacalar & Mahahual (Costa Maya)",
+    "Zipolite & Mazunte (Oaxaca coast)",
+    "Mazatlán"
+   ],
+   "plan_waits": {
+    "plan_part": 22.5,
+    "plan": 83.9
+   },
+   "plan_total_usd": 884,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Budget lines sum to $749 by my count (330+30+72+88+8+30+12+35+4+160+35 = 804, plus the $80 buffer = 884). Food is only $160 for 11 days and activities $35, but the headline says about $840 and logistics say about $830 with $220 for food and activities. Align the headline, logistics and budget on one total.",
+     "The budget notes say a $400 fare pushes the total to about $954 and recommend cutting nights and cooking more. A plan that is only $16 under the cap with a 10% buffer is fragile. Either trim costs, or state clearly that the buffer absorbs a fare up to about $395. Right now the notes contradict themselves: they say the cap holds at $345 or less, but the buffer covers more than that.",
+     "Nights are listed as 1 Cancún + 4 Bacalar + 4 Mahahual + 1 Cancún = 10, which matches. But the stays list Bacalar at $18 a night and the day text says $15-20. Lodging in the logistics says about $180, and the budget lodging totals $190. Reconcile these.",
+     "The Mahahual to Limones to Cancún return is unrealistic as written. Mahahual shuttles to Limones are limited, and ADO from Limones to Cancún has few departures. The plan says to buy the Limones to Cancún ADO ticket the day before, but Limones is a junction stop and is not a reliable ticket point. Verify that a direct Mahahual to Cancún ADO or a Mahahual to Chetumal or Tulum option exists, and add a fallback. A missed connection could cost an extra night before the flight home.",
+     "The 5-6 hour bus on day 10 is followed by a flight home the next day. Consider putting the final night near the airport with enough buffer, and state the flight departure time. Day 11 says 'afternoon' flight, which is vague. Day 1 assumes a 3.5-4 hour ORD to CUN flight, but the trip summary says 4.5 hours.",
+     "The Bacalar to Mahahual leg on day 6 is described as about $4-6 plus $5-8 and 2+ hours with limited service. The day is marked 'slow', but it is a connection-dependent travel day. Give concrete departure times or a backup option."
+    ],
+    "summary": "The plan fits the brief on theme: warm, chill and beach-friendly in one country, with Bacalar and Mahahual as two bases. It has budget inconsistencies and a transfer-realism problem, so I'm not approving it yet."
+   },
+   "revisions": [
+    [
+     "Day 1 is infeasible as written. The plan has a morning ORD-CUN flight (about 3.5-4 hrs) and then a 5-6 hr bus from CUN to Bacalar in the afternoon. That means arriving after dark, or very late with immigration. Fix by adding a Cancún or Playa del Carmen arrival night, or by scheduling a specific early flight and a late-night ADO arrival with a pre-booked bed. Also drop the 'sleep early' and 'tacos near the plaza' framing if the arrival is after 10pm.",
+     "Nights do not match the stays. The days show Bacalar nights 1-5 (Jan 10-14), Mahahual nights 15-18 (4 nights), and Cancún night 19 (1 night). That is 10 nights, which is correct. But Day 5 says 'Pack up' and Day 6 starts with a Bacalar to Mahahual transfer that is described as 'Limones or Mahahual', which is vague. Specify the actual route (ADO or colectivo to Limones, then a colectivo to Mahahual) and the timing, because direct service is limited.",
+     "Day 10 is a 5-6 hr bus with a change from Mahahual to Cancún, and it is labeled 'easy'. The Mahahual-Cancún bus is also priced at $30 as a guess. Check the schedule and confirm that connections exist. The day before the flight is risky. Consider a more reliable ADO route, such as Mahahual to Limones to Cancún, with a stated departure time.",
+     "The budget is inconsistent. The trip's rough_cost is $790, while the budget is $893, and the contingency is included in the total. Only $7 is left against the $900 cap. Daily spend of $220 for 11 days (about $20/day) is tight, particularly with a $30-40 snorkel trip and higher Mahahual prices. The plan should be made to fit comfortably, for example by making the cheaper mask rental the default, not the paid trip. Reconcile the headline ('about $790') with the $893 budget.",
+     "Cancún mid-plan costs are not accounted for. The airport-to-Bacalar bus ($28) is probably lower than real ADO fares, which are about $35-45 from CUN airport. Re-check the transfer prices, since the budget has almost no slack.",
+     "Day 7 says to snorkel 'straight off the beach near the reef'. Mahahual's reef is offshore, so that is not accurate. Fix it to say 'rent gear and swim at the reef-side spots' or to book the boat trip."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     22.5
+    ],
+    [
+     "logistics",
+     6.1
+    ],
+    [
+     "budget",
+     8.3
+    ],
+    [
+     "reviewer",
+     9.4
+    ],
+    [
+     "itinerary",
+     14.7
+    ],
+    [
+     "logistics",
+     6.3
+    ],
+    [
+     "budget",
+     8.0
+    ],
+    [
+     "reviewer",
+     8.5
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Warm, cheap, beach-adjacent, one country, two bases: a good match for the brief. Budget lines do sum to $884, but the headline says \"about $840\" and the option card said $790, so the plan contradicts itself. The $330 flight is an estimate, and at a $400 fare the total is about $954, over the cap. Two Cancún nights and two extra transfers add cost; a direct Cancún-to-Bacalar bus, and ending at CUN without a second airport-side night, could trim it."
+   },
+   "cost_usd": 0.229,
+   "seconds": 142.9
+  },
+  {
+   "id": "complete-no-questions",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.6,
+    "candidates": 22.6,
+    "options": 29.1
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Oaxaca Coast (Mazunte & San Agustinillo)",
+    "El Salvador East Coast (El Cuco & Playa Las Flores)",
+    "Colombian Caribbean (Palomino & Santa Marta area)"
+   ],
+   "plan_waits": {
+    "plan_part": 25.3,
+    "plan": 111.3
+   },
+   "plan_total_usd": 1293,
+   "review": {
+    "approved": false,
+    "issues": [
+     "Night count mismatch. The brief is 14 nights (Feb 1 to Feb 15). The stays total 1+6+6+1 = 14, but the daily itinerary doesn't match them. Mazunte is used for nights of days 2-7 (6 nights, correct). San Agustinillo is used for days 8-13 (6 nights, correct). Day 14 is in Huatulco (1 night). Day 1 is also in Huatulco (1 night). Counted from the itinerary this is 14 nights, so the nights are fine. The real problem is that the Day 15 'Fly home' entry says to take a Mexico City hostel night if no same-day connection works. That is a contingency that could push the return to Feb 16 and break the end date. Remove it, or fix the return as a firm itinerary item.",
+     "Budget figures disagree across documents. The headline, itinerary and logistics say about $1,170. The budget says $1,293, with lodging at $210 versus $215 and transfers at $70 versus $80. The rough_cost in the chosen trip says $1,250. Reconcile them into one consistent total.",
+     "The Day 15 budget summary says $20/day food for 15 days, and cheap seafood is a must-have. $20/day with palapa grilled-fish dinners at $8-10 and some tacos and market meals is plausible but tight. Itemise it, or raise the food line.",
+     "The $650 fare-cap claim says it 'still keeps the trip under budget'. With the 10% buffer the total is about $1,383, which leaves almost no headroom. If the Mexico City night is also needed, the total is about $1,403, which is over the cap. The note that it 'still fits' is wrong at the $650 fare.",
+     "Day 1 is unrealistic. The SEA to MEX to HUX flights with a connection are unlikely to land in the afternoon on the earliest departure, and the plan says to avoid the 1.5-hour leg after dark. It also mentions an overnight in Huatulco when a direct colectivo or shuttle to Mazunte may be possible the same day. Check whether a flight actually lands early enough, and say how the plan holds if it lands late.",
+     "Day 14 sends the traveller back to Huatulco and uses a lodging night. Flights from HUX are limited. Consider whether Puerto Escondido (PXM) or a direct overnight bus would be cheaper or simpler. The plan doesn't compare these alternatives, so it hasn't shown the cheapest option.",
+     "Zipolite is a day trip. Zipolite is known as a bohemian, party-tinged beach, which touches the avoid list. A single quiet day is acceptable, but the plan should note a quieter alternative, or confirm it is a daytime visit only."
+    ],
+    "summary": "The plan is mostly on brief. It stays in one country, the pace is quiet, and the beach and seafood must-haves are covered. The budget is within the cap. However, the night counts don't match the dates, and the budget figures and some flight and transfer details are inconsistent."
+   },
+   "revisions": [
+    [
+     "The budget is too tight. The total is $1,385 against a $1,400 cap, a $15 margin on an estimated $600 flight. The brief says everything must fit inside $1,400, so find real slack, for example by checking cheaper flight options or dropping the paid extras.",
+     "The budget figures disagree across documents. The chosen trip says flights $560 and a $1,250 total, while the logistics and budget say $600. The logistics put food at $20-25/day ($300-350) and lodging at about $295, while the budget uses $17/day for food. Reconcile them into one set of numbers.",
+     "The food line is $255 for 15 days of three meals, including daily fish dinners at palapas that the itinerary schedules. The budget notes admit $17/day relies on comedor meals instead. Either the itinerary or the food figure has to change, because the plan as written would overspend.",
+     "Day 1 is unrealistic. SEA to Mexico City, then on to Huatulco, then a 1.5-hour shuttle, all on Feb 1, is a very long day. There is no flight-time check, and the last colectivo may not run after a late arrival. Add a buffer or an overnight in Huatulco, or confirm the arrival time.",
+     "Day 15 is unrealistic. An early shuttle, HUX to MEX, then MEX to SEA, arriving in Seattle the same evening, is unlikely to work. HUX to MEX flights are few and the connection is tight. Plan the last night near Huatulco, or allow for the realistic schedule.",
+     "The 'Fly home' day is listed under San Agustinillo, but the shuttle is described as going from Mazunte. The logistics cost the shuttle as Huatulco to Mazunte, with no San Agustinillo pickup. Clarify the pickup point and its cost.",
+     "The plan shows the 'transfers' list as empty even though there are airport shuttles and flights. The Mazunte to San Agustinillo move is also not listed. Populate the transfers.",
+     "Flight price uncertainty is not handled. A fare jump would break the budget, and the plan gives no concrete cheaper alternative. It mentions OAX only as a slower fallback. Consider whether the OAX or Puerto Escondido alternatives are cheaper."
+    ]
+   ],
+   "agent_seconds": [
+    [
+     "itinerary",
+     25.3
+    ],
+    [
+     "logistics",
+     6.1
+    ],
+    [
+     "budget",
+     9.5
+    ],
+    [
+     "reviewer",
+     8.4
+    ],
+    [
+     "itinerary",
+     30.2
+    ],
+    [
+     "logistics",
+     5.9
+    ],
+    [
+     "budget",
+     15.6
+    ],
+    [
+     "reviewer",
+     10.3
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Good fit for beaches, cheap grilled fish and a quiet pace, and the budget math checks out ($1,175 subtotal, $1,293 with buffer). Missed savings: the $20 shuttles each way look high for a Huatulco–Mazunte combi, and the $560 flight is unverified (the plan itself allows up to $650). The headline's \"$1,170\" conflicts with the $1,293 budget, and the transfers array is empty even though transfers are budgeted. Zipolite is a day trip only, so the nightlife concern is minor."
+   },
+   "cost_usd": 0.2382,
+   "seconds": 148.5
+  }
+ ]
+}

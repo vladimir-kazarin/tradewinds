@@ -1,0 +1,218 @@
+{
+ "label": "reviewer-calibrated",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 3,
+  "errors": 0,
+  "all_checks_pass_rate": 1.0,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 1.0,
+   "brief_nights": 1.0,
+   "brief_origin": 1.0,
+   "days_and_dates": 1.0,
+   "multi_country_option": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 1.0,
+   "reviewer_approved": 1.0,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": 3.67,
+  "judge_fit_avg": 4.0,
+  "cost_usd_total": 0.423,
+  "seconds_avg": 93.3
+ },
+ "results": [
+  {
+   "id": "vague-warm",
+   "asked_questions": true,
+   "search_waits": {
+    "brief": 4.1,
+    "candidates": 21.5,
+    "options": 28.5
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true
+   },
+   "options": [
+    "Mérida & Yucatán cenotes",
+    "Lake Atitlán (Panajachel & San Pedro)",
+    "León & Pacific coast, Nicaragua"
+   ],
+   "plan_waits": {
+    "plan_part": 19.3,
+    "plan": 44.8
+   },
+   "plan_total_usd": 894,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip has 11 days and 10 nights, and the stays (5 Mérida, 3 Progreso, 2 Mérida) match the nights. The budget lines add up to $894, under the $900 cap, and the destination is warm in January. The transfers are feasible. Non-blocking notes: (1) The $350 flight is an estimate and the main risk, so verify the fare. The itinerary already gives a cut plan if the fare runs higher. (2) The logistics text says $168 for beds while the budget uses $158. (3) The Celestún flamingo day trip from Progreso is long, at about 2 hours each way. (4) The itinerary has no named flight times."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     19.3
+    ],
+    [
+     "logistics",
+     6.8
+    ],
+    [
+     "budget",
+     11.9
+    ],
+    [
+     "reviewer",
+     6.9
+    ]
+   ],
+   "judge": {
+    "value": 3,
+    "fit": 4,
+    "notes": "Fits the brief well: warm January, one country, two bases, dorms and street food, and the arithmetic adds to $894. The main weakness is that the $350 ORD-MID round-trip flight is an unverified guess (the option itself said $300), and several lines look low: Uxmal entry (~$25 vs. roughly $30-35 foreigner rate), bus fares, and the Celestún flamingo boat tour, which isn't costed at all. A realistic total could push past $900, and the 10% buffer is the only cushion. A cheaper ORD-Cancún fare plus ADO bus might be the better-value route."
+   },
+   "cost_usd": 0.1257,
+   "seconds": 83.6
+  },
+  {
+   "id": "balkans-multi",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 8.4,
+    "candidates": 34.6,
+    "options": 45.5
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "multi_country_option": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Lake Ohrid & Albanian Hills (North Macedonia–Albania–Kosovo)",
+    "Mostar & Bay of Kotor (Bosnia–Montenegro–Albania)",
+    "Belgrade–Sarajevo–Montenegro Rail & Bus Loop"
+   ],
+   "plan_waits": {
+    "plan_part": 32.2,
+    "plan": 52.5
+   },
+   "plan_total_usd": 928,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip covers 3 countries (North Macedonia, Albania, Kosovo) across 4 bases. Dates are 1–17 Sept, which is 16 nights. Stay nights (2+6+3+5) add up to 16 and match the day-by-day bases. The budget total of $928 is under $1,000. The open-jaw flights avoid backtracking. The only long transfer days are Ohrid–Berat (5–6h) and Berat–Prizren, and each is on its own slow day with no flight that day. Day 17 has a 2h bus to PRN, which is fine. The Ohrid–Berat route is realistic.\n\nNon-blocking notes:\n- The Berat–Prizren day via Tirana and Kukës is long and its fare is uncertain. Allow $5–15 more, which the contingency covers.\n- Ohrid gets 6 nights and Prizren 5, so some days are very empty. Berat or Tirana could have had more time instead.\n- Day 17 says to fly home with no flight time given. Check that the flight leaves late enough for the early bus.\n- The Prizren–Pristina bus is cheap, and it's worth checking that the first bus times suit the flight.\n- The Day 8 \"Saturday-style market\" label doesn't match 8 Sept 2026, which is a Tuesday.\n- The \"daily_spend\" in the rough_cost figure is inconsistent with the detailed budget, but the detailed budget is the one to rely on."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     32.2
+    ],
+    [
+     "logistics",
+     6.7
+    ],
+    [
+     "budget",
+     8.8
+    ],
+    [
+     "reviewer",
+     4.9
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "The route fits the brief well: three countries, slow pacing, dorm beds, and bus links that are workable in this region. The main problems are the numbers. The pitch says $834 with $208 lodging and $150 flights, but the plan's own budget totals $928 with $239 lodging and $170 flights, and the pitch's $416 daily spend doesn't match the plan's roughly $368 of food, local transport, activities and misc. The $170 open-jaw BER–SKP/PRN–BER fare is optimistic for September, and the Berat→Prizren leg (Tirana, Kukës, border) is probably closer to 8–10 hours than the implied timing, so $30 is likely light. Still, about $930 for 16 nights across four bases is about as cheap as this trip gets, and it stays under budget."
+   },
+   "cost_usd": 0.1613,
+   "seconds": 105.9
+  },
+  {
+   "id": "complete-no-questions",
+   "asked_questions": false,
+   "search_waits": {
+    "brief": 4.7,
+    "candidates": 25.3,
+    "options": 32.6
+   },
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Mazunte & Zipolite coast, Oaxaca",
+    "Sisal & Celestún, Yucatán Gulf coast",
+    "El Cuco & Playa Las Flores, eastern El Salvador"
+   ],
+   "plan_waits": {
+    "plan_part": 28.2,
+    "plan": 50.5
+   },
+   "plan_total_usd": 1244,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The trip is Mexico only, with 14 nights from Feb 1 to Feb 15. It has two bases: 1 night in Huatulco and 13 in Mazunte, and these match the stays. It is quiet and beach-focused with cheap seafood, and it avoids party towns. Zipolite is only a day trip. The total of $1,244 is under the $1,400 budget. Day 1 is a slow arrival day with a short transfer, and the Day 15 early shuttle is feasible. Minor notes: (1) The Day 15 header says base Huatulco, but no night is spent there. (2) The flight is a SEA-MEX-HUX connection, and a same-day arrival in Huatulco on Feb 1 depends on the schedule. Check it, because a late arrival could mean going straight to Mazunte. (3) The $1,244 total uses 14 nights of lodging at $230 and includes a buffer. (4) Fares are estimates."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     28.2
+    ],
+    [
+     "logistics",
+     6.3
+    ],
+    [
+     "budget",
+     12.5
+    ],
+    [
+     "reviewer",
+     3.6
+    ]
+   ],
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Oaxaca's Mazunte fits the brief well: one country, quiet beaches, cheap seafood, and no party scene in Mazunte itself. Value is held back by the flight: the $520 estimate routes through Mexico City to Huatulco and is unverified, and the plan's own rough-cost summary ($1,086) conflicts with its logistics budget ($1,244), so the real total is unclear. The plan also has an empty transfers list and no lodging on the last night, and the $16 Mazunte dorm rate in February is optimistic. Biggest missed saving: check OAX (Oaxaca City) fares and a shuttle to the coast, which the plan only mentions as a fallback. Zipolite is a looser, more party-adjacent beach, so the plan should keep the stay in Mazunte."
+   },
+   "cost_usd": 0.1357,
+   "seconds": 90.5
+  }
+ ]
+}

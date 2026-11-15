@@ -120,7 +120,7 @@ export function planHTML(p, { notesPending }) {
   const update = notesPending ? `<button class="btn ghost small" data-action="replan">Update plan with your notes</button>` : "";
   const note = p.note ? `<div class="banner">${esc(p.note)}</div>` : "";
   return `<section class="plan" id="plan" aria-label="Trip plan">${note}
-    <div class="plan-head"><h3>${head}</h3>${p.final ? `<span class="reviewed">Reviewed ✓</span>` : ""}${update}</div>
+    <div class="plan-head"><h3>${head}</h3>${p.final && p.review && p.review.approved ? `<span class="reviewed">Reviewed ✓</span>` : ""}${update}</div>
     ${it ? `<div style="margin-top:8px">${it.highlights.map(h => `<span class="tag" style="margin:0 6px 6px 0">✦ ${esc(h)}</span>`).join("")}</div>` : ""}
     <div class="plan-grid">
       <div class="section"><div class="label">Day by day</div>${it ? it.days.map(dayHTML).join("") : waitingHTML("Planning each day…")}</div>

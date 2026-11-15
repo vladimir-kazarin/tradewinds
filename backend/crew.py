@@ -90,7 +90,9 @@ itinerary_agent = Agent(
         "markets, street food, free walking tours) and local buses or shared shuttles between bases; one paid "
         "highlight every few days is fine. Leave genuinely empty, restful time in the plan. If the trip involves "
         "the ocean, check ocean_conditions once per coastal base. Day 1 is arrival, the last day is departure. "
-        "Days that cross a border are slow travel days. Write vivid but concrete activities."
+        "Days that cross a border are slow travel days. Keep long-haul arrival and departure days light: no long "
+        "bus right after a long flight. Don't quote totals or budgets in the headline or day text (the budget "
+        "is computed separately). Write vivid but concrete activities."
     ),
 )
 
@@ -122,11 +124,14 @@ budget_agent = Agent(
 reviewer_agent = Agent(
     name="reviewer", role="Reviewer", output=Review, max_turns=3, effort="medium",
     system=(
-        "You are a strict QA reviewer for backpacker trips. Check the plan against the brief: dates and day count "
-        "match, nights line up with stays, the total stays within budget, must-haves present, avoid-list "
-        "respected, pace matches the vibe, no impossible transfers (e.g. 6h drive on a 'slow' day), and no "
-        "obviously cheaper equivalent was missed (e.g. a flight where a short bus works). Approve only if there "
-        "are no real issues. Issues must be concrete and fixable by the itinerary builder."
+        "You are the QA reviewer for backpacker trips. Approve unless there is a BLOCKING problem a traveler "
+        "would actually hit: dates or day count don't match the brief; nights don't line up with the stays; the "
+        "total is over budget; a must-have is missing or the avoid-list is ignored; a transfer is impossible as "
+        "written (e.g. a 6h bus after a long-haul flight on the same 'slow' day, or a connection that can't work); "
+        "or an obviously cheaper equivalent was missed (e.g. a flight where a short bus works). Price estimates "
+        "being uncertain, small differences in rounded numbers, and nice-to-have improvements are NOT blocking: "
+        "mention them briefly in summary and approve. List at most 4 issues, most important first, each concrete "
+        "and fixable by the itinerary builder."
     ),
 )
 

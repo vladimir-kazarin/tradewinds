@@ -66,8 +66,21 @@ async def _noop_emit(_: dict[str, Any]) -> None:
     return None
 
 
-def _collector(sink: list[dict[str, Any]]):
+MILESTONES = ("brief", "candidates", "options", "plan_part", "plan")
+
+
+def _clock(t0: float, marks: dict[str, float]):
+    """Records when each milestone first arrives: what the traveler actually waits for."""
     async def emit(ev: dict[str, Any]) -> None:
+        if ev["type"] in MILESTONES and ev["type"] not in marks:
+            marks[ev["type"]] = round(time.monotonic() - t0, 1)
+    return emit
+
+
+def _collector(sink: list[dict[str, Any]], also=None):
+    async def emit(ev: dict[str, Any]) -> None:
+        if also is not None:
+            await also(ev)
         if ev["type"] in ("revision", "agent_done", "agent_error"):
             sink.append({k: v for k, v in ev.items() if k != "output"} | (
                 {"output": ev["output"]} if ev.get("agent") in ("reviewer",) else {}))
@@ -98,12 +111,17 @@ async def run_case(case: dict[str, Any], *, plan_step: bool, judge: bool, label:
     try:
         with tracing.run_trace(f"eval:{case['id']}", input={"prompt": case["prompt"]}, session_id=f"eval-{label}"):
             turns = [ChatTurn(role="user", text=case["prompt"])]
-            ev = await plan_options(turns, _noop_emit, usage)
+            marks: dict[str, float] = {}
+            ev = await plan_options(turns, _clock(time.monotonic(), marks), usage)
             result["asked_questions"] = ev["type"] == "questions"
-            if ev["type"] == "questions":
+            for _ in range(2):  # the Brief may ask up to two rounds
+                if ev["type"] != "questions":
+                    break
                 turns += [ChatTurn(role="assistant", text="\n".join([ev["reply"], *ev["questions"]])),
                           ChatTurn(role="user", text=case["answer"])]
-                ev = await plan_options(turns, _noop_emit, usage)
+                t_search = time.monotonic()
+                ev = await plan_options(turns, _clock(t_search, marks), usage)
+            result["search_waits"] = marks
             result["checks"] = score_options(case["expect"], ev)
             result["options"] = [o["option"]["name"] for o in ev["options"]]
             plan = None
@@ -111,7 +129,10 @@ async def run_case(case: dict[str, Any], *, plan_step: bool, judge: bool, label:
                 brief = TripBrief.model_validate(ev["brief"])
                 best = DestinationOption.model_validate(ev["options"][0]["option"])
                 trail: list[dict[str, Any]] = []
-                plan = await plan_trip(brief, best, _collector(trail), usage)
+                t_plan = time.monotonic()
+                plan_marks: dict[str, float] = {}
+                plan = await plan_trip(brief, best, _collector(trail, _clock(t_plan, plan_marks)), usage)
+                result["plan_waits"] = plan_marks
                 result["checks"].update(score_plan(case["expect"], brief, plan))
                 result["plan_total_usd"] = plan.budget.total_usd
                 result["review"] = plan.review.model_dump()
