@@ -69,3 +69,24 @@ def test_last_turn_is_announced(monkeypatch):
     out, calls = _run(monkeypatch, [_resp(geo), _resp(submit)], max_turns=2)
     last_user = calls[1]["messages"][-1]["content"]
     assert any(b.get("type") == "text" and "final" in b["text"].lower() for b in last_user)
+
+
+def test_cancelled_call_is_charged_an_estimate(monkeypatch):
+    from limits import SpendLedger
+
+    class Hanging:
+        async def create(self, **kwargs):
+            raise asyncio.CancelledError()
+
+    monkeypatch.setattr(agent_mod, "_client", NS(messages=Hanging()))
+    ledger = SpendLedger(daily_limit_usd=100)
+
+    async def emit(ev):
+        pass
+
+    a = Agent(name="t", role="T", system="Be helpful.", output=Out)
+    try:
+        asyncio.run(a.run("x" * 4000, emit, Usage(ledger=ledger)))
+    except asyncio.CancelledError:
+        pass
+    assert ledger.spent_today() > 0

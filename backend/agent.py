@@ -15,13 +15,14 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any, Awaitable, Callable, Generic, TypeVar
 
 from anthropic import AsyncAnthropic, APIStatusError, APIConnectionError
 from pydantic import BaseModel, ValidationError
 
 import tracing
-from limits import RunBudgetExceeded, SpendLedger, cost_usd
+from limits import DailyBudgetExhausted, RunBudgetExceeded, SpendLedger, cost_usd
 from tools import TOOL_REGISTRY, run_tool
 
 T = TypeVar("T", bound=BaseModel)
@@ -30,6 +31,7 @@ Emit = Callable[[dict[str, Any]], Awaitable[None]]
 MODEL = os.getenv("TRADEWINDS_MODEL", "claude-sonnet-5-5")
 SUBMIT_RULE = ("\n\nWhen you are done, call the `submit` tool exactly once with your final answer. "
                "Never finish with a text-only reply: your work only counts when it arrives through `submit`.")
+CHARS_PER_TOKEN = 4  # rough estimate, only used to charge a cancelled call
 NUDGE = "You replied without calling a tool. Call the `submit` tool now with your final answer."
 FINAL_TURN = "This is your final turn: call the `submit` tool now with your best final answer."
 _client: AsyncAnthropic | None = None
@@ -59,6 +61,8 @@ class Usage:
         self.cost_usd += delta
         if self.ledger is not None:
             self.ledger.add(delta)
+            if self.ledger.exhausted():
+                raise DailyBudgetExhausted(f"daily spend ${self.ledger.spent_today():.2f} reached its cap")
         if self.budget_usd is not None and self.cost_usd > self.budget_usd:
             raise RunBudgetExceeded(f"run spent ${self.cost_usd:.3f}, cap is ${self.budget_usd:.2f}")
 
@@ -71,7 +75,7 @@ class Agent(Generic[T]):
     output: type[T]
     tools: list[str] = field(default_factory=list)
     max_turns: int = 8
-    max_tokens: int = 4096
+    max_tokens: int = 16_000  # adaptive thinking counts against this, so leave room
     model: str = MODEL
 
     def _submit_tool(self) -> dict[str, Any]:
@@ -102,11 +106,22 @@ class Agent(Generic[T]):
             except (APIStatusError, APIConnectionError) as e:
                 await emit({"type": "agent_error", "agent": self.name, "message": str(e)})
                 raise
+            except asyncio.CancelledError:
+                # The request may still be billed; charge a conservative estimate so the daily cap sees it.
+                est_in = len(system + json.dumps(tracing.jsonable(messages), default=str)) // CHARS_PER_TOKEN
+                usage.add(SimpleNamespace(input_tokens=est_in, output_tokens=self.max_tokens), self.model)
+                raise
             u = resp.usage
+            charge_error: Exception | None = None
+            try:
+                usage.add(u, self.model)  # charge first: tracing must never skip the ledger
+            except (RunBudgetExceeded, DailyBudgetExhausted) as e:
+                charge_error = e
             gen.update(output=tracing.jsonable(resp.content) if tracing.enabled() else None,
                        usage_details={"input": u.input_tokens, "output": u.output_tokens},
                        cost_details={"total": cost_usd(self.model, u.input_tokens, u.output_tokens)})
-            usage.add(u, self.model)  # may raise RunBudgetExceeded; the generation is still recorded
+            if charge_error is not None:
+                raise charge_error
             return resp
 
     async def _run_tool(self, call: Any) -> dict[str, Any]:

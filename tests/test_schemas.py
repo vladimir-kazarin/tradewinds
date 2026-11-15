@@ -61,3 +61,9 @@ def test_chat_turn_limits():
         ChatTurn(role="user", text="x" * 1001)
     with pytest.raises(ValidationError):
         ChatTurn(role="user", text="")
+
+
+def test_extra_saving_tips_are_trimmed_not_rejected():
+    b = Budget(lines=[dict(category="a", usd=1)], total_usd=1, within_budget=True, notes="",
+               saving_tips=[f"tip {i}" for i in range(8)])
+    assert len(b.saving_tips) == 5

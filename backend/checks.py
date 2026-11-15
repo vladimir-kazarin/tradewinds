@@ -9,7 +9,7 @@ from __future__ import annotations
 import unicodedata
 from datetime import timedelta
 
-from schemas import DestinationOption, Itinerary, Logistics, TripBrief
+from schemas import Budget, DestinationOption, Itinerary, Logistics, ScoutReport, TripBrief
 
 
 def _norm(s: str) -> str:
@@ -77,3 +77,17 @@ def stay_country_mismatches(option: DestinationOption, logistics: Logistics) -> 
     listed = ", ".join(option.countries)
     return [f"Stay in {s.base} is in {s.country}, which isn't one of this trip's countries ({listed})."
             for s in logistics.stays if _outside(option, s.country)]
+
+
+def option_budget_issues(brief: TripBrief, scout: ScoutReport) -> list[str]:
+    """Backpacker rule: no option may cost more than the traveler's budget."""
+    return [f"{o.name} is estimated at ${o.rough_cost.total_usd}, over the ${brief.budget_usd} budget; "
+            f"replace it with a cheaper option or cut its costs." for o in scout.options
+            if o.rough_cost.total_usd > brief.budget_usd]
+
+
+def plan_budget_issues(brief: TripBrief, budget: Budget) -> list[str]:
+    if budget.total_usd <= brief.budget_usd:
+        return []
+    return [f"The plan totals ${budget.total_usd}, over the ${brief.budget_usd} budget by "
+            f"${budget.total_usd - brief.budget_usd}; make it cheaper."]

@@ -52,3 +52,12 @@ def test_plan_checks(brief):
     bad = score_plan(EXPECT, b, _plan(runs, total=1700, approved=False, tips=(), text_extra="Party hostel crawl"))
     assert not bad["plan_within_budget"] and not bad["reviewer_approved"]
     assert not bad["saving_tips"] and not bad["avoid_respected"] and bad["stays_match_itinerary"]
+
+
+def test_must_haves_are_searched_in_options_not_the_brief(brief, option_cr):
+    ev = _options_event(brief, option_cr)
+    for o in ev["options"]:
+        o["pitch"] = "quiet beaches"
+        o["option"]["why"] = "quiet beaches"
+    ev["brief"]["must_haves"] = ["surf lessons"]
+    assert not score_options(EXPECT, ev)["must_haves_in_options"]

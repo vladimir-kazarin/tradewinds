@@ -78,7 +78,7 @@ judge_agent = Agent(
 
 itinerary_agent = Agent(
     name="itinerary", role="Itinerary Builder", output=Itinerary,
-    tools=["geocode", "ocean_conditions"], max_tokens=8000,
+    tools=["geocode", "ocean_conditions"],
     system=(
         "You build day-by-day backpacker itineraries that match the traveler's mood. " + VALUE_RULE +
         "Use 2-3 bases max for slow travel; every day needs a real base town with its country and coordinates "

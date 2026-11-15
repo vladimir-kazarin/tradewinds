@@ -10,10 +10,11 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 AIRPORT = r"^[A-Z]{3}$"
 MAX_NIGHTS = 60
+MAX_SAVING_TIPS = 5
 
 
 class TripBrief(BaseModel):
@@ -157,8 +158,12 @@ class Budget(BaseModel):
     total_usd: int
     within_budget: bool
     notes: str
-    saving_tips: list[str] = Field(default_factory=list, max_length=5,
-                                   description="Concrete ways to spend less on this trip")
+    saving_tips: list[str] = Field(default_factory=list, description="Up to 5 concrete ways to spend less")
+
+    @field_validator("saving_tips")
+    @classmethod
+    def _at_most_five_tips(cls, tips: list[str]) -> list[str]:
+        return tips[:MAX_SAVING_TIPS]  # trim rather than fail a whole budget over a sixth tip
 
     @model_validator(mode="after")
     def _total_is_sum(self) -> Budget:

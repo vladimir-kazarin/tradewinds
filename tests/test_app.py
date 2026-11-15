@@ -12,6 +12,14 @@ ANSWERED = {"messages": [{"role": "user", "text": "Somewhere warm"}, {"role": "a
                          {"role": "user", "text": "December"}]}
 
 
+@pytest.fixture(autouse=True)
+def isolated_ledger(monkeypatch):
+    """Never touch the real runs/spend-ledger.json from tests."""
+    import app
+    from limits import SpendLedger
+    monkeypatch.setattr(app, "LEDGER", SpendLedger(daily_limit_usd=1_000))
+
+
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
@@ -207,3 +215,47 @@ def test_live_run_is_traced_with_session_and_output(monkeypatch, tmp_path):
 
 def test_bad_session_id_is_422(client):
     assert client.post("/api/options", json={**FIRST, "session_id": "<script>"}).status_code == 422
+
+
+def _req(headers=None, host="9.9.9.9"):
+    from types import SimpleNamespace as NS
+    return NS(headers={k.lower(): v for k, v in (headers or {}).items()}, client=NS(host=host))
+
+
+def test_queue_cap_is_reserved_at_admission(monkeypatch):
+    import app
+    from limits import RateLimiter, Slots
+    monkeypatch.setattr(app, "SLOTS", Slots(capacity=1))
+    lim = RateLimiter(limit=100, window_s=3600)
+    first = app._admit(_req(), lim)
+    assert not isinstance(first, app.JSONResponse)
+    second = app._admit(_req(), lim)
+    assert isinstance(second, app.JSONResponse) and second.status_code == 429
+    first.release()
+    assert not isinstance(app._admit(_req(), lim), app.JSONResponse)
+
+
+def test_client_ip_trusts_only_fly_header_and_groups_ipv6(monkeypatch):
+    import app
+    monkeypatch.setattr(app, "TRUST_PROXY", True)
+    assert app._client_ip(_req({"Fly-Client-IP": "1.2.3.4"})) == "1.2.3.4"
+    assert app._client_ip(_req({"X-Forwarded-For": "6.6.6.6"}, host="10.0.0.1")) == "10.0.0.1"
+    a = app._client_ip(_req({"Fly-Client-IP": "2001:db8:1:2:aaaa::1"}))
+    b = app._client_ip(_req({"Fly-Client-IP": "2001:db8:1:2:bbbb::9"}))
+    assert a == b
+
+
+def test_daily_exhaustion_mid_run_gives_daily_message(monkeypatch, tmp_path):
+    import app
+    from types import SimpleNamespace as NS
+    from limits import SpendLedger
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setattr(app, "RUNS", tmp_path)
+    monkeypatch.setattr(app, "LEDGER", SpendLedger(daily_limit_usd=0.05))
+
+    async def fake(turns, emit, usage):
+        usage.add(NS(input_tokens=100_000, output_tokens=0))
+
+    monkeypatch.setattr(app, "plan_options", fake)
+    evs = _events(TestClient(app.app).post("/api/options", json=FIRST))
+    assert evs == [{"type": "error", "message": app.DAILY_LIMIT_MSG}]

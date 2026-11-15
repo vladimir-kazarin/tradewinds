@@ -58,3 +58,15 @@ def test_stay_country_issues_are_separate_from_day_issues(option_cr):
     assert all("Day" in i for i in country_mismatches(option_cr, itinerary(runs)))
     issues = stay_country_mismatches(option_cr, logistics(runs))
     assert len(issues) == 1 and "Bocas Town" in issues[0]
+
+
+def test_budget_issues_flag_over_budget_options_and_plans(brief, option_cr):
+    from checks import option_budget_issues, plan_budget_issues
+    from schemas import Budget, BudgetLine, ScoutReport
+    over = option_cr.model_copy(update={"name": "Pricey", "rough_cost": option_cr.rough_cost.model_copy(
+        update={"flights_usd": 3000, "total_usd": 3000 + 1190 + 860})})
+    issues = option_budget_issues(brief, ScoutReport(options=[option_cr, over, option_cr]))
+    assert len(issues) == 1 and "Pricey" in issues[0]
+    plan_over = Budget(lines=[BudgetLine(category="a", usd=3100)], total_usd=3100, within_budget=True, notes="")
+    assert plan_budget_issues(brief, plan_over) and not plan_budget_issues(
+        brief, plan_over.model_copy(update={"lines": [BudgetLine(category="a", usd=900)], "total_usd": 900}))

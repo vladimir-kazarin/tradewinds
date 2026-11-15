@@ -33,7 +33,7 @@ def score_options(expect: dict[str, Any], ev: dict[str, Any]) -> dict[str, bool]
     if "min_countries" in expect:
         checks["multi_country_option"] = any(len(o["countries"]) >= expect["min_countries"] for o in options)
     if "must" in expect:
-        text = json.dumps(ev, ensure_ascii=False)
+        text = json.dumps(ev["options"], ensure_ascii=False)  # not the brief, which echoes the prompt
         checks["must_haves_in_options"] = all(_found(p, text) for p in expect["must"])
     return checks
 

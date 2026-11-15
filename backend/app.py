@@ -8,7 +8,9 @@ Every live run is recorded to runs/<timestamp>.jsonl so good runs can become dem
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
+import uuid
 import logging
 import os
 import time
@@ -26,7 +28,7 @@ from sse_starlette.sse import EventSourceResponse
 
 import tracing
 from agent import Emit, Usage
-from limits import RateLimiter, RunBudgetExceeded, SpendLedger
+from limits import DailyBudgetExhausted, RateLimiter, Reservation, RunBudgetExceeded, Slots, SpendLedger
 from pipeline import plan_options, plan_trip
 from schemas import ChatTurn, DestinationOption, TripBrief
 
@@ -58,10 +60,13 @@ log = logging.getLogger("tradewinds")
 MAX_CONCURRENT = int(os.getenv("TRADEWINDS_MAX_CONCURRENT", "2"))
 MAX_QUEUE = int(os.getenv("TRADEWINDS_MAX_QUEUE", "6"))
 RUN_BUDGET_USD = float(os.getenv("TRADEWINDS_RUN_BUDGET_USD", "1.00"))
-LEDGER = SpendLedger(float(os.getenv("TRADEWINDS_DAILY_BUDGET_USD", "20")))
+LEDGER = SpendLedger(float(os.getenv("TRADEWINDS_DAILY_BUDGET_USD", "20")),
+                     path=Path(os.getenv("TRADEWINDS_LEDGER_PATH", str(RUNS / "spend-ledger.json"))))
 OPTIONS_LIMITER = RateLimiter(int(os.getenv("TRADEWINDS_OPTIONS_PER_HOUR", "20")), HOUR_S)
 PLAN_LIMITER = RateLimiter(int(os.getenv("TRADEWINDS_PLANS_PER_HOUR", "10")), HOUR_S)
 TRUST_PROXY = os.getenv("TRADEWINDS_TRUST_PROXY") == "1"  # set on Fly.io, where Fly-Client-IP is reliable
+SLOTS = Slots(MAX_CONCURRENT + MAX_QUEUE)
+IPV6_PREFIX = 64  # one person usually controls a whole /64
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -71,7 +76,6 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Tradewinds", lifespan=_lifespan)
 _live_slots = asyncio.Semaphore(MAX_CONCURRENT)
-_inflight = 0  # running + queued live runs
 
 
 @app.exception_handler(RequestValidationError)
@@ -115,27 +119,35 @@ async def health() -> dict:
 
 
 def _client_ip(request: Request) -> str:
-    if TRUST_PROXY:
-        forwarded = request.headers.get("fly-client-ip") or request.headers.get("x-forwarded-for", "")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    """Rate-limit key. Only Fly's own header is trusted (X-Forwarded-For is client-controlled);
+    IPv6 addresses are grouped by /64 so one host can't rotate through addresses."""
+    raw = request.headers.get("fly-client-ip", "") if TRUST_PROXY else ""
+    raw = raw.strip() or (request.client.host if request.client else "unknown")
+    try:
+        ip = ipaddress.ip_address(raw)
+    except ValueError:
+        return raw
+    if ip.version == 6:
+        return str(ipaddress.ip_network(f"{ip}/{IPV6_PREFIX}", strict=False))
+    return str(ip)
 
 
-def _guard(request: Request, limiter: RateLimiter) -> JSONResponse | None:
-    """Refuse a live run before it starts: daily cap, overall queue, then per-IP rate."""
+def _admit(request: Request, limiter: RateLimiter) -> Reservation | JSONResponse:
+    """Admit a live run or refuse it: daily cap, then running+queued slots, then per-IP rate.
+    The slot is reserved here, synchronously, so a burst of requests can't overshoot the cap."""
     if LEDGER.exhausted():
         return JSONResponse(status_code=503, content={"detail": DAILY_LIMIT_MSG})
-    if _inflight >= MAX_CONCURRENT + MAX_QUEUE:
-        return JSONResponse(status_code=429, content={"detail": BUSY_MSG},
-                            headers={"Retry-After": str(BUSY_RETRY_S)})
     ip = _client_ip(request)
     if not limiter.allow(ip):
         wait = limiter.retry_after(ip)
         minutes = max(1, round(wait / 60))
         msg = f"You've planned a lot in the last hour. Please try again in about {minutes} minutes."
         return JSONResponse(status_code=429, content={"detail": msg}, headers={"Retry-After": str(wait)})
-    return None
+    reservation = SLOTS.try_reserve()
+    if reservation is None:
+        return JSONResponse(status_code=429, content={"detail": BUSY_MSG},
+                            headers={"Retry-After": str(BUSY_RETRY_S)})
+    return reservation
 
 
 async def _replay(path: Path, speed: float, prelude: list[dict] | None = None) -> AsyncIterator[dict]:
@@ -158,19 +170,17 @@ class TraceInfo:
     session_id: str | None
 
 
-async def _live(run: Run, trace: TraceInfo) -> AsyncIterator[dict]:
+async def _live(run: Run, trace: TraceInfo, reservation: Reservation) -> AsyncIterator[dict]:
     q: asyncio.Queue = asyncio.Queue()
 
     async def worker() -> None:
-        global _inflight
-        _inflight += 1
         try:
             await _run_logged(run, q, trace)
         except Exception:  # anything outside the run itself (log file, disk): still tell the browser
             log.exception("run setup failed")
             await q.put({"type": "error", "message": FRIENDLY_ERROR})
         finally:
-            _inflight -= 1
+            reservation.release()
             await q.put(None)
 
     task = asyncio.create_task(worker())
@@ -179,12 +189,16 @@ async def _live(run: Run, trace: TraceInfo) -> AsyncIterator[dict]:
             yield {"data": json.dumps(ev, default=str)}
     finally:
         task.cancel()  # client disconnected: stop spending tokens
+        reservation.release()
 
 
 async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo) -> None:
     async with _live_slots:
+        if LEDGER.exhausted():  # the cap may have been reached while this run was queued
+            await q.put({"type": "error", "message": DAILY_LIMIT_MSG})
+            return
         # Opened only once a slot is free, so queued runs leave no empty files.
-        with (RUNS / f"{int(time.time() * 1000)}.jsonl").open("w") as f:
+        with (RUNS / f"{int(time.time() * 1000)}-{uuid.uuid4().hex[:8]}.jsonl").open("w") as f:
             last = time.monotonic()
 
             async def emit(ev: dict) -> None:
@@ -203,6 +217,10 @@ async def _run_logged(run: Run, q: asyncio.Queue, trace: TraceInfo) -> None:
                 with tracing.run_trace(trace.name, input=trace.input, session_id=trace.session_id,
                                        metadata={"run_log": f.name.rsplit("/", 1)[-1]}) as root:
                     await run(emit, usage)
+            except DailyBudgetExhausted as e:
+                f.write(json.dumps({"type": "error", "message": str(e)}) + "\n")
+                log.warning("run stopped: %s", e)
+                await q.put({"type": "error", "message": DAILY_LIMIT_MSG})
             except RunBudgetExceeded as e:
                 f.write(json.dumps({"type": "error", "message": str(e)}) + "\n")
                 log.warning("run stopped: %s", e)
@@ -218,11 +236,11 @@ async def options(req: OptionsRequest, request: Request, demo: bool = False, spe
     if not _is_live(demo):
         asked = any(t.role == "assistant" for t in req.messages)
         return EventSourceResponse(_replay(DEMO_OPTIONS if asked else DEMO_QUESTIONS, max(speed, MIN_SPEED)))
-    refused = _guard(request, OPTIONS_LIMITER)
-    if refused is not None:
-        return refused
+    admitted = _admit(request, OPTIONS_LIMITER)
+    if isinstance(admitted, JSONResponse):
+        return admitted
     trace = TraceInfo("plan-options", {"messages": [t.model_dump() for t in req.messages]}, req.session_id)
-    return EventSourceResponse(_live(lambda emit, usage: plan_options(req.messages, emit, usage), trace))
+    return EventSourceResponse(_live(lambda emit, usage: plan_options(req.messages, emit, usage), trace, admitted))
 
 
 def _recorded_option_name() -> str | None:
@@ -238,12 +256,13 @@ async def plan(req: PlanRequest, request: Request, demo: bool = False, speed: fl
     if not _is_live(demo):
         prelude = [] if req.option.name == _recorded_option_name() else [DEMO_NOTE]
         return EventSourceResponse(_replay(DEMO_PLAN, max(speed, MIN_SPEED), prelude))
-    refused = _guard(request, PLAN_LIMITER)
-    if refused is not None:
-        return refused
+    admitted = _admit(request, PLAN_LIMITER)
+    if isinstance(admitted, JSONResponse):
+        return admitted
     trace = TraceInfo("plan-trip", {"brief": req.brief.model_dump(mode="json"), "option": req.option.name},
                       req.session_id)
-    return EventSourceResponse(_live(lambda emit, usage: plan_trip(req.brief, req.option, emit, usage), trace))
+    return EventSourceResponse(_live(lambda emit, usage: plan_trip(req.brief, req.option, emit, usage), trace,
+                                     admitted))
 
 
 @app.get("/")

@@ -15,8 +15,8 @@ from datetime import date
 from typing import Any
 
 from agent import Emit, Usage
-from checks import (base_sequence, country_mismatches, itinerary_mismatches, stay_country_mismatches,
-                    stay_mismatches)
+from checks import (base_sequence, country_mismatches, itinerary_mismatches, option_budget_issues,
+                    plan_budget_issues, stay_country_mismatches, stay_mismatches)
 from crew import (CREW, brief_agent, brief_decide_agent, budget_agent, itinerary_agent, judge_agent,
                   logistics_agent, reviewer_agent, scout_agent)
 from links import build_links
@@ -88,6 +88,11 @@ async def plan_options(turns: list[ChatTurn], emit: Emit, usage: Usage | None = 
         reply, brief = first.reply, first.brief
 
     scout = await scout_agent.run(f"Brief:\n{_j(brief)}", emit, usage)
+    over = option_budget_issues(brief, scout)
+    if over:  # one retry; never show a card the traveler can't afford
+        scout = await scout_agent.run(
+            f"Brief:\n{_j(brief)}\n\nYour previous options:\n{_j(scout)}\n\nFix these problems:{_issues_text(over)}",
+            emit, usage)
     verdict = await judge_agent.run(f"Brief:\n{_j(brief)}\n\nOptions:\n{_j(scout)}", emit, usage)
     ranked = rank_options(scout, verdict)
     ev = {"type": "options", "reply": reply, "brief": _dump(brief), "options": [_dump(r) for r in ranked]}
@@ -154,7 +159,7 @@ async def plan_trip(brief: TripBrief, option: DestinationOption, emit: Emit,
     for round_ in range(MAX_REVISIONS + 1):
         plan_ctx = f"{ctx}\n\nItinerary:\n{_j(itinerary)}\n\nLogistics:\n{_j(logistics)}"
         budget = await budget_agent.run(plan_ctx, emit, usage)
-        known = stay_mismatches(itinerary, logistics, brief.nights)
+        known = stay_mismatches(itinerary, logistics, brief.nights) + plan_budget_issues(brief, budget)
         flagged = f"\n\nAutomated checks found:{_issues_text(known)}" if known else ""
         review = await reviewer_agent.run(f"{plan_ctx}\n\nBudget:\n{_j(budget)}{flagged}", emit, usage)
         if review.approved or round_ == MAX_REVISIONS:
