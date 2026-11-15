@@ -28,7 +28,8 @@ from tools import TOOL_REGISTRY, run_tool
 T = TypeVar("T", bound=BaseModel)
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
 
-MODEL = os.getenv("TRADEWINDS_MODEL", "claude-sonnet-5-5")
+MODEL = os.getenv("TRADEWINDS_MODEL", "claude-sonnet-5-5")  # judgment-heavy agents
+LIGHT_MODEL = os.getenv("TRADEWINDS_LIGHT_MODEL", "claude-haiku-5-5")  # extraction, scoring, arithmetic
 SUBMIT_RULE = ("\n\nWhen you are done, call the `submit` tool exactly once with your final answer. "
                "Never finish with a text-only reply: your work only counts when it arrives through `submit`.")
 CHARS_PER_TOKEN = 4  # rough estimate, only used to charge a cancelled call

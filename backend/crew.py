@@ -2,12 +2,14 @@
 
 Orchestration lives in pipeline.py. Step 1 (options) uses Brief, Scout and
 Judge; step 2 (plan one option) uses Itinerary, Logistics, Budget and Reviewer.
+Light, well-specified work (Brief, Judge, Budget) runs on LIGHT_MODEL; finding places,
+planning days, pricing logistics and reviewing stay on the main MODEL.
 `brief_decide_agent` is the Brief's second-round form: its output has no room
 for questions, which is how the one-question-round rule is enforced.
 """
 from __future__ import annotations
 
-from agent import Agent
+from agent import LIGHT_MODEL, Agent
 from schemas import (BriefDecision, BriefResult, Budget, Itinerary, Logistics, Review, ScoutReport,
                      VibeVerdict)
 
@@ -24,7 +26,7 @@ _BRIEF_FIELDS = (
 )
 
 brief_agent = Agent(
-    name="brief", role="Trip Brief", output=BriefResult, max_turns=2,
+    name="brief", role="Trip Brief", output=BriefResult, max_turns=3, model=LIGHT_MODEL,
     system=(
         "You are a warm, efficient travel planner for backpackers, talking to a traveler. " + VALUE_RULE
         + _BRIEF_FIELDS +
@@ -37,7 +39,7 @@ brief_agent = Agent(
 )
 
 brief_decide_agent = Agent(
-    name="brief", role="Trip Brief", output=BriefDecision, max_turns=2,
+    name="brief", role="Trip Brief", output=BriefDecision, max_turns=3, model=LIGHT_MODEL,
     system=(
         "You are a warm, efficient travel planner for backpackers. You already asked the traveler your "
         "questions; now decide. " + VALUE_RULE + _BRIEF_FIELDS +
@@ -65,7 +67,7 @@ scout_agent = Agent(
 )
 
 judge_agent = Agent(
-    name="judge", role="Vibe Judge", output=VibeVerdict, max_turns=2,
+    name="judge", role="Vibe Judge", output=VibeVerdict, max_turns=3, model=LIGHT_MODEL,
     system=(
         "You are an impartial judge of value for backpackers. Score each destination 1-10 on vibe_fit, weather, "
         "budget_fit (value for money: how much trip the budget buys, and how much is left over) and ease (flight "
@@ -91,7 +93,7 @@ itinerary_agent = Agent(
 )
 
 logistics_agent = Agent(
-    name="logistics", role="Logistics", output=Logistics, max_turns=2,
+    name="logistics", role="Logistics", output=Logistics, max_turns=3,
     system=(
         "You plan the cheapest sensible flights, beds and ground transport for a finished backpacker itinerary. "
         + VALUE_RULE +
@@ -106,7 +108,7 @@ logistics_agent = Agent(
 )
 
 budget_agent = Agent(
-    name="budget", role="Budget", output=Budget, max_turns=2,
+    name="budget", role="Budget", output=Budget, max_turns=3, model=LIGHT_MODEL,
     system=(
         "You are a frugal backpacker accountant. Build a budget from the logistics (flights, beds and any "
         "transfers between countries as their own lines) plus food, activities and a 10% buffer. total_usd must "
@@ -116,7 +118,7 @@ budget_agent = Agent(
 )
 
 reviewer_agent = Agent(
-    name="reviewer", role="Reviewer", output=Review, max_turns=2,
+    name="reviewer", role="Reviewer", output=Review, max_turns=3,
     system=(
         "You are a strict QA reviewer for backpacker trips. Check the plan against the brief: dates and day count "
         "match, nights line up with stays, the total stays within budget, must-haves present, avoid-list "

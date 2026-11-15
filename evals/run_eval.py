@@ -66,6 +66,14 @@ async def _noop_emit(_: dict[str, Any]) -> None:
     return None
 
 
+def _collector(sink: list[dict[str, Any]]):
+    async def emit(ev: dict[str, Any]) -> None:
+        if ev["type"] in ("revision", "agent_done", "agent_error"):
+            sink.append({k: v for k, v in ev.items() if k != "output"} | (
+                {"output": ev["output"]} if ev.get("agent") in ("reviewer",) else {}))
+    return emit
+
+
 def _judge_input(options_ev: dict[str, Any], plan: PlanResult | None) -> str:
     compact = {
         "brief": options_ev["brief"],
@@ -102,9 +110,13 @@ async def run_case(case: dict[str, Any], *, plan_step: bool, judge: bool, label:
             if plan_step:
                 brief = TripBrief.model_validate(ev["brief"])
                 best = DestinationOption.model_validate(ev["options"][0]["option"])
-                plan = await plan_trip(brief, best, _noop_emit, usage)
+                trail: list[dict[str, Any]] = []
+                plan = await plan_trip(brief, best, _collector(trail), usage)
                 result["checks"].update(score_plan(case["expect"], brief, plan))
                 result["plan_total_usd"] = plan.budget.total_usd
+                result["review"] = plan.review.model_dump()
+                result["revisions"] = [e["issues"] for e in trail if e["type"] == "revision"]
+                result["agent_seconds"] = [(e["agent"], e["seconds"]) for e in trail if e["type"] == "agent_done"]
             if judge:
                 verdict = await judge_agent.run(_judge_input(ev, plan), _noop_emit, usage)
                 result["judge"] = verdict.model_dump()

@@ -1,0 +1,22 @@
+{
+ "label": "diag",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 1,
+  "errors": 1,
+  "all_checks_pass_rate": 0.0,
+  "check_pass_rates": {},
+  "judge_value_avg": null,
+  "judge_fit_avg": null,
+  "cost_usd_total": 0.061,
+  "seconds_avg": 42.5
+ },
+ "results": [
+  {
+   "id": "complete-no-questions",
+   "error": "RuntimeError: judge did not submit within 2 turns",
+   "cost_usd": 0.0609,
+   "seconds": 42.5
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "label": "diag",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 1,
+  "errors": 0,
+  "all_checks_pass_rate": 1.0,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 1.0,
+   "brief_nights": 1.0,
+   "brief_origin": 1.0,
+   "days_and_dates": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 1.0,
+   "reviewer_approved": 1.0,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": null,
+  "judge_fit_avg": null,
+  "cost_usd_total": 0.191,
+  "seconds_avg": 118.8
+ },
+ "results": [
+  {
+   "id": "complete-no-questions",
+   "asked_questions": false,
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": true,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Mazunte & San Agustinillo (Oaxaca coast)",
+    "El Cuyo & Río Lagartos (Yucatán north coast)",
+    "Santa Marta, Palomino & Tayrona coast (Colombian Caribbean)"
+   ],
+   "plan_total_usd": 1264,
+   "review": {
+    "approved": true,
+    "issues": [],
+    "summary": "Approved. The plan matches the brief.\n\n- **Dates and nights:** Feb 1–15 gives 15 days and 14 nights. The itinerary has 7 Mazunte nights (Feb 1–7) and 7 San Agustinillo nights (Feb 8–14), which matches the stays. Day 15 is departure.\n- **Budget:** The line items sum to $1,149. With the $115 buffer the total is $1,264, which is under the $1,400 cap. Even a $650 flight keeps it under the cap.\n- **Must-haves:** Beaches, cheap seafood at palapas and fondas, and a quiet atmosphere are all present. It uses one country and two beach bases, with dorm beds and colectivos.\n- **Avoid list:** There is no party hostel or nightlife, and no crowded resort town.\n- **Pace:** Every day is slow or easy. The longest transfers are on arrival and departure days.\n- **Transfers:** The Mazunte–San Agustinillo hops are 10 minutes by truck or 40 minutes on foot. The HUX connections via Pochutla are realistic. A colectivo and shuttle is cheaper than any alternative.\n\nMinor points the builder could tidy, none of them blocking:\n- The headline says about $1,150, but the budget total is $1,264 because it includes the 10% buffer. Align the two.\n- The day 11 Zipolite day trip sits slightly against the chosen trip's \"skip Zipolite\" note. It is an early-morning beach visit, so it is acceptable. Another quiet cove would avoid the conflict.\n- San Agustinillo dorm beds at $15 a night are optimistic, since it is mostly private cabañas. The buffer covers the gap.\n- Days 1 and 15 are long travel days that depend on flight timing. Suggest an early first flight on day 1, and a note on day 15 to check that the last MEX–SEA connection works."
+   },
+   "revisions": [],
+   "agent_seconds": [
+    [
+     "itinerary",
+     33.5
+    ],
+    [
+     "logistics",
+     13.8
+    ],
+    [
+     "budget",
+     7.8
+    ],
+    [
+     "reviewer",
+     17.8
+    ]
+   ],
+   "cost_usd": 0.1906,
+   "seconds": 118.8
+  }
+ ]
+}

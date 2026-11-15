@@ -1,0 +1,87 @@
+{
+ "label": "multimodel",
+ "model": "claude-sonnet-5-5",
+ "summary": {
+  "cases": 2,
+  "errors": 0,
+  "all_checks_pass_rate": 0.0,
+  "check_pass_rates": {
+   "avoid_respected": 1.0,
+   "brief_budget": 1.0,
+   "brief_nights": 1.0,
+   "brief_origin": 1.0,
+   "days_and_dates": 1.0,
+   "options_within_budget": 1.0,
+   "plan_within_budget": 1.0,
+   "reviewer_approved": 0.0,
+   "saving_tips": 1.0,
+   "stays_match_itinerary": 1.0,
+   "three_options": 1.0
+  },
+  "judge_value_avg": 4.0,
+  "judge_fit_avg": 4.5,
+  "cost_usd_total": 1.008,
+  "seconds_avg": 288.5
+ },
+ "results": [
+  {
+   "id": "vague-warm",
+   "asked_questions": true,
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true
+   },
+   "options": [
+    "El Salvador Surf Coast: El Zonte & El Tunco",
+    "Oaxaca Coast: Zipolite & Mazunte",
+    "Colombian Caribbean: Santa Marta & Palomino"
+   ],
+   "plan_total_usd": 851,
+   "judge": {
+    "value": 4,
+    "fit": 5,
+    "notes": "Fits the brief well: one country, warm surf coast, dorm beds, no resorts or tours, and $851 with buffer is under $900. Value is held back by an unverified $450 flight estimate, a headline that says \"$774 committed\" while the budget total is $851, and a surf rental priced at $16 in the budget but $5 in the tips. A one-base El Zonte stay would also cut the bus and transfer costs."
+   },
+   "cost_usd": 0.5071,
+   "seconds": 293.2
+  },
+  {
+   "id": "complete-no-questions",
+   "asked_questions": false,
+   "checks": {
+    "three_options": true,
+    "options_within_budget": true,
+    "brief_budget": true,
+    "brief_nights": true,
+    "brief_origin": true,
+    "plan_within_budget": true,
+    "stays_match_itinerary": true,
+    "days_and_dates": true,
+    "reviewer_approved": false,
+    "saving_tips": true,
+    "avoid_respected": true
+   },
+   "options": [
+    "Oaxaca Coast: Mazunte & San Agustinillo",
+    "El Salvador Eastern Coast: El Cuco & Playa Las Flores",
+    "Colombian Caribbean: Santa Marta, Taganga & Palomino coast"
+   ],
+   "plan_total_usd": 1384,
+   "judge": {
+    "value": 4,
+    "fit": 4,
+    "notes": "Oaxaca fits the beach, relaxed, cheap-seafood brief and the dorm and guesthouse prices are realistic. The main weaknesses are the numbers: the headline says $1,340 while the budget says $1,384, and the rough_cost transfers are $80 against $40 in the budget. The $40 for HUX-Pochutla, coast colectivos and the airport run is too low, since the airport van alone is likely $25-40 each way. The $600 round-trip flight is also optimistic against the $520 option card, and the cap has little room if the fare or food runs high. Zipolite is a bit lively, though the plan keeps the stay in San Agustinillo."
+   },
+   "cost_usd": 0.5008,
+   "seconds": 283.9
+  }
+ ]
+}
